@@ -1,0 +1,5 @@
+node_modules/
+lib/
+*.log
+# Local emulator secrets (provide OPENAI_API_KEY here for emulator runs)
+.secret.local

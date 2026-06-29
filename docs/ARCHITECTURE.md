@@ -122,4 +122,4 @@ This split is why the security rules (see `firestore.rules`) make `fred_sessions
 
 ## 5. Reference Function Skeleton
 
-See `functions/index.js` for a runnable skeleton of `fredTurn`, `generateVocabulary`, `awardPoints`, and `syncPublicProfile`, including the App Check + auth + quota guards described above.
+See the `functions/` TypeScript project (`functions/src/`) for the implementation of `fredTurn`, `generateVocabulary`, `awardGamePoints`, `syncPublicProfile`, and `deleteMyAccount`, including the App Check + auth + quota guards described above. See `functions/README.md` for setup, secrets, and deploy steps.
