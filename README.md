@@ -1,47 +1,74 @@
-# Language Learning App — MVP Architecture
+# Linguafox — language learning app (MVP)
 
-Architecture, Firestore schema, security rules, and implementation plan for the
-initial functional prototype. Built on **Firebase** (Authentication, Firestore,
-Cloud Storage, Cloud Functions). Focus: core functionality, architecture, and
-security — UI styling is out of scope for this phase.
+Learn the words your day actually needs, then practise saying them out loud with
+**FRED**, an AI speaking coach.
 
-## Core features
-- **A. Task-based vocabulary** — type a daily activity, get a level-appropriate word/sentence list.
-- **B. Vocabulary library** — alphabetical by default, filterable by date added.
-- **C. FRED** — AI speaking coach: record audio → transcript → feedback + score.
-- **D. Gamification** — streaks + Star Points (server-authoritative).
-- **E. Gazelle mascot** — outfit unlocks tied to streaks.
-- **F. Profiles & social graph** — friend requests, public profiles.
-- **G. Friendly competition** — challenge friends to FRED sprints.
+Built on **Supabase** (Postgres + Auth + Storage + Edge Functions) with a
+**React + TypeScript** client. This phase covers core functionality,
+architecture and security; visual design is deliberately restrained.
 
-## Deliverables in this repo
-| File | What it is |
-|------|-----------|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System diagram + how AI requests are secured (FRED flow, cost/token control). |
-| [`docs/FIRESTORE_SCHEMA.md`](docs/FIRESTORE_SCHEMA.md) | Collections, subcollections, and document structures. |
-| [`firestore.rules`](firestore.rules) | Security rules: strict user isolation + membership-gated social data. |
-| [`storage.rules`](storage.rules) | Per-user isolation for audio and avatars. |
-| [`firestore.indexes.json`](firestore.indexes.json) | Composite indexes for the documented queries. |
-| [`functions/index.js`](functions/index.js) | Reference Cloud Function skeleton (FRED, vocab gen, points, profile sync). |
-| [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | Phased build order; where FRED fits in the MVP. |
+## Features
 
-## Security model in one paragraph
-The client holds **no secrets** and can **never write its own scores**. It reads
-its own data directly from Firestore (rules-enforced) and uploads audio to its
-own Storage folder. Every paid-AI call and every point/streak/outfit change goes
-through a **Cloud Function** that authenticates the caller, verifies **App
-Check**, enforces a **per-user quota**, reads the API key from **Secret
-Manager**, and writes authoritative results via the **Admin SDK** (which bypasses
-rules). FRED sessions, gamification fields, public profiles, and challenge scores
-are therefore read-only or closed to clients — the server is the sole author.
+| | Feature | Status |
+|---|---------|--------|
+| A | **Task-based vocabulary** — describe an activity, get a level-appropriate word & sentence list | ✅ |
+| B | **Vocabulary library** — alphabetical by default, filter by date added, search | ✅ |
+| C | **FRED** — record speech, get transcription, coaching feedback and a score | ✅ |
+| D | **Gamification** — streaks and Star Points, server-authoritative | ✅ |
+| E | **Gazelle mascot** — outfits unlock from streak thresholds | ✅ |
+| F | **Profiles & friends** — search, friend requests, public profiles, leaderboard | ✅ |
+| G | **Friendly competition** — FRED sprint challenges between friends | ✅ |
 
-## Local development
-```bash
-cd functions && npm install && cd ..
-firebase emulators:start          # auth, firestore, storage, functions
+Screens: **[docs/SCREENS.md](docs/SCREENS.md)**
+
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System diagram, the FRED loop, cost control, where authorisation lives |
+| [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) | Tables, columns, indexes, functions and the reasoning behind them |
+| [SECURITY.md](docs/SECURITY.md) | Threat model, 23 mitigations, deployment checklist, known gaps |
+| [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Build order and what ships when |
+| [SCREENS.md](docs/SCREENS.md) | Every page, captured from the running app |
+
+## Layout
+
 ```
-Deploy security first, then features:
-```bash
-firebase deploy --only firestore:rules,storage:rules,firestore:indexes
-firebase deploy --only functions
+supabase/
+  migrations/       0001 schema · 0002 RLS · 0003 functions · 0004 storage
+  functions/        fred-turn, generate-vocabulary, award-game-points, delete-account
+app/
+  src/pages/        one file per screen
+  src/lib/          api (single data-access layer), session, types
+docs/
 ```
+
+## Running it
+
+### Frontend, no backend needed
+```bash
+cd app
+npm install
+npm run dev          # http://localhost:5173
+```
+Without `.env` the app runs in **demo mode** against an in-memory store, so every
+screen works offline. Useful for design review.
+
+### Against a real Supabase project
+```bash
+cp app/.env.example app/.env      # fill in URL + anon key
+supabase db push                  # apply migrations
+supabase functions deploy fred-turn generate-vocabulary award-game-points delete-account
+supabase secrets set OPENAI_API_KEY=sk-...  ALLOWED_ORIGINS=https://your-app.com
+```
+
+## Security in one paragraph
+
+Every user is treated as a potential attacker holding a valid JWT and the public
+anon key. Row Level Security isolates all data in Postgres; a `public_profiles`
+view provides column-level privacy that RLS alone cannot. Star Points, streaks,
+FRED sessions and challenge scores are written **only** by SECURITY DEFINER
+functions the client has no permission to execute, so scores cannot be forged.
+The AI key lives in Edge Function secrets and never reaches the browser, and a
+per-user daily quota bounds spend. Full detail — including known gaps — in
+[SECURITY.md](docs/SECURITY.md).

@@ -1,60 +1,75 @@
-# Step-by-Step Implementation Plan
+# Implementation Plan
 
-Ordered to maximize compounding: each phase unblocks the next and is independently demoable. **FRED is deliberately placed in the middle of the MVP** — after the secure spine exists, but as the headline feature it must ship inside the MVP, not after.
+Ordered so each phase unblocks the next and is independently demoable. Phases
+0–6 are **implemented in this repository**; phase 7 is the pre-launch work that
+depends on a live project and real users.
 
-## Phase 0 — Project & security spine (foundation)
-1. Create the Firebase project; enable Auth, Firestore, Storage, Functions (Blaze plan — required for outbound AI calls).
-2. Commit `firestore.rules`, `storage.rules`, `firestore.indexes.json`, `firebase.json` (already in this repo) and deploy them **first** — security before features.
-3. Stand up the Firebase Emulator Suite for local dev so rules/functions are tested without touching prod.
-4. Enable **App Check** (debug provider locally; reCAPTCHA/DeviceCheck/Play Integrity in prod).
+## Phase 0 — Security spine ✅
+1. Postgres schema with constraints and enums (`0001_schema.sql`).
+2. RLS enabled on every table, grants revoked, column-freeze triggers
+   (`0002_rls.sql`) — **written before any feature**, not retrofitted.
+3. Server-authoritative functions (`0003_functions.sql`).
+4. Buckets with size/MIME limits and owner-scoped policies (`0004_storage.sql`).
 
-## Phase 1 — Auth & user profile (feature F, part 1)
-1. Email/password (and/or Google) sign-in.
-2. On first sign-in, create `users/{uid}` with `starPoints: 0`, `streak.current: 0`, `mascot.level: 1` (enforced by create rule).
-3. Profile edit screen (displayName, languages, fluency level, avatar upload to `avatars/{uid}/`).
-4. Deploy `syncPublicProfile` so `public_profiles/{uid}` exists for later social features.
-**Demoable:** sign up, edit profile, isolated per-user data.
+## Phase 1 — Auth & profile ✅
+Email/password sign-in; a trigger provisions `profiles` + `user_stats` on
+signup; onboarding captures username, languages and CEFR level; settings screen
+with the privacy toggle.
+*Demo: sign up, complete onboarding, edit profile.*
 
-## Phase 2 — Task-based vocabulary + library (features A & B)
-1. Task input UI → write `users/{uid}/tasks/{taskId}` with `status: requested`.
-2. Deploy `generateVocabulary` Cloud Function (LLM key isolated in Secret Manager). This is the **first paid-API integration** and proves the secure server pattern end-to-end on a low-risk feature before FRED.
-3. Vocabulary Library: list `users/{uid}/vocabulary` ordered by `wordLower` (alphabetical default) with a toggle to `createdAt` and a date-range filter (uses the composite index).
-**Demoable:** type an activity → get a level-appropriate word/sentence list → browse the library.
+## Phase 2 — Task-based vocabulary & library ✅
+`generate-vocabulary` Edge Function — the **first paid-API integration**, and
+deliberately the simpler one, so the secure pattern (JWT → quota → secret → AI →
+validated write) is proven before FRED depends on it. Library sorts
+alphabetically by default, filters by date added, and searches.
+*Demo: type an activity → get a word list → browse it.*
 
-## Phase 3 — FRED, the AI speaking coach (feature C) ⭐ MVP centerpiece
-> FRED reuses the exact secure pattern proven in Phase 2 (callable function + Secret Manager + Admin SDK writes), now with audio.
-1. Client audio capture → upload to `audio/{uid}/{sessionId}`.
-2. Deploy `fredTurn`: App Check + auth + quota guards → transcribe → GPT-4o analysis → write `fred_sessions` → return feedback.
-3. Session UI: prompt, record, see transcript + `analysis_text` + `performance_score`.
-4. Add Storage lifecycle rule to auto-delete raw audio (cost + privacy).
-5. Add GCP budget alerts and verify per-user quota enforcement.
-**Demoable:** speak to FRED, get pronunciation/grammar feedback and a score.
+## Phase 3 — FRED ⭐ ✅
+Audio capture → upload to the caller's own storage folder → `fred-turn`
+transcribes, analyses with GPT-4o, writes the session, awards points, and
+deletes the recording.
+*Demo: speak, get a score and coaching feedback.*
 
-## Phase 4 — Gamification, streaks & mascot (features D & E)
-1. `awardPoints` (already called by FRED) becomes the single server-authoritative entry point for Star Points + streak + outfit unlock.
-2. Hook mini-games into the same `awardPoints` path.
-3. Build the Gazelle mascot screen: current level, equipped/unlocked outfits, streak counter.
-**Demoable:** earning points from FRED/games advances streak and unlocks a Gazelle outfit.
+## Phase 4 — Gamification & mascot ✅
+`award_points()` is the single authoritative entry point for Star Points,
+streaks and outfit unlocks; `equip_outfit()` validates ownership. Mascot screen
+shows level, unlocked outfits and the next threshold.
+*Demo: a FRED session advances the streak and unlocks an outfit.*
 
-## Phase 5 — Social graph (feature F, part 2)
-1. User search via `public_profiles`.
-2. Friend requests: create/accept/decline/remove on `connections` (membership-gated rules).
-3. Public profile view (streak, stars, mascot) and a friends leaderboard from `public_profiles`.
-**Demoable:** add a friend, view their public stats.
+## Phase 5 — Social graph ✅
+User search over `public_profiles`, friend requests with asymmetric accept
+rules, friends list, and a leaderboard.
+*Demo: search a username, send and accept a request.*
 
-## Phase 6 — Friendly competition (feature G)
-1. Create a challenge (`fred_sprint`) → opponent accepts → `status: active`.
-2. FRED sessions tagged with `challengeId` feed `progressChallenge` server-side.
-3. Resolve winner on target/expiry, award bonus Star Points, surface results.
-**Demoable:** challenge a friend to a FRED sprint and see a winner.
+## Phase 6 — Friendly competition ✅
+FRED sprint challenges, friends-only, with server-written scores and automatic
+winner settlement.
+*Demo: challenge a friend, run sessions, see a winner.*
 
-## Phase 7 — Hardening before launch
-- Account-deletion function (purges subcollections, storage, public profile, connections).
-- Tighten quotas/budgets from real usage data.
-- Security-rules unit tests (`@firebase/rules-unit-testing`) for isolation + social access.
-- Crash/error logging and basic analytics.
+## Phase 7 — Pre-launch hardening ⬜
+Needs a live project; tracked in [SECURITY.md](SECURITY.md) §5–6.
+1. Turn on email confirmation, password policy, auth rate limiting, CAPTCHA.
+2. Run the Supabase security advisor; fix anything it flags.
+3. Add RLS regression tests (pgTAP or a two-user integration suite) that assert
+   user A cannot read or write user B's rows.
+4. Spend caps and billing alerts on OpenAI.
+5. CSP and security headers on the frontend host.
+6. Backups / PITR, then a load and abuse test.
 
 ---
 
-## Where does FRED fit?
-FRED is **in the MVP (Phase 3)** — it's the differentiating feature, so cutting it would gut the product. But it is intentionally **not first**: it depends on the auth/profile spine (Phase 1) and is safest to build once the secure Cloud Function pattern has already been proven on the lower-risk vocabulary generator (Phase 2). That sequencing de-risks the most expensive, most security-sensitive feature.
+## Where FRED fits
+FRED is the differentiator, so it ships **inside** the MVP — but not first. It
+needs the auth spine (phase 1), and it is far safer to build once the secure
+Edge Function pattern has been proven on the cheaper vocabulary generator
+(phase 2). That ordering de-risks the most expensive and most
+security-sensitive feature in the product.
+
+## Suggested next steps
+1. **Stand up a Supabase project** and run the migrations; verify the security
+   advisor is clean.
+2. **Write the RLS regression tests** (phase 7.3) — the single highest-value
+   addition now that the policies exist.
+3. **Mini-games** for feature D, routed through `award-game-points`.
+4. **React Native port** — the client is plain React + TypeScript with all data
+   access behind `src/lib/api.ts`, so the pages port with the data layer intact.

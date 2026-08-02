@@ -1,125 +1,132 @@
-# Architecture Blueprint — Language Learning App (MVP)
+# Architecture — Language Learning App (MVP)
 
-> Scope: core functionality, architecture, and security. UI styling/colors are intentionally out of scope.
+Stack: **Supabase** (Postgres + Auth + Storage + Edge Functions) with a
+**React + TypeScript** client. Scope is core functionality, architecture and
+security; visual design is deliberately restrained.
 
-## 1. Stack
+## 1. Components
 
 | Layer | Technology | Responsibility |
 |-------|-----------|----------------|
-| Client | Web (React) or Mobile (Flutter / React Native) | UI, audio capture, optimistic reads. **Holds zero secrets.** |
-| Auth | Firebase Authentication | Identity, per-user `uid`, isolates all data. |
-| Database | Cloud Firestore | Structured app data (profiles, vocabulary, FRED sessions, social graph). |
-| File storage | Cloud Storage for Firebase | Raw audio uploads, avatar images. |
-| Server logic | Cloud Functions (2nd gen) | **The only place that talks to paid AI APIs.** Holds API keys, enforces quotas, writes authoritative data (points/streaks). |
-| Secrets | Cloud Secret Manager | Stores OpenAI / GPT-4o keys, injected into Functions at runtime. |
-| Abuse protection | Firebase App Check | Guarantees calls to Functions come from your genuine app, not a script. |
+| Client | React 18 + TypeScript + Vite | UI, audio capture, RLS-scoped reads. **Holds no secrets.** |
+| Auth | Supabase Auth (GoTrue) | Email/password identity, JWTs, `auth.uid()`. |
+| Database | Postgres + Row Level Security | All structured data; isolation and game rules enforced here. |
+| Storage | Supabase Storage | Speech recordings (private), avatars. |
+| Server logic | Edge Functions (Deno) | The only code that holds the AI key or writes scores. |
+| AI | OpenAI (GPT-4o + transcription) | Transcription, coaching feedback, vocabulary generation. |
 
-## 2. High-Level System Diagram
+## 2. System diagram
 
 ```mermaid
 flowchart TD
-    subgraph Client["Client App (no secrets)"]
-        UI[UI Layer]
-        Rec[Audio Recorder]
-        SDK[Firebase Client SDK]
+    subgraph Client["React client — untrusted"]
+        UI[Pages]
+        Rec[MediaRecorder]
+        SDK[supabase-js]
     end
 
-    subgraph Firebase["Firebase / Google Cloud"]
-        Auth[Firebase Auth]
-        FS[(Cloud Firestore)]
-        CS[(Cloud Storage)]
-        AC[App Check]
-        subgraph CF["Cloud Functions (2nd gen) — trusted server"]
-            FnFred[fredTurn]
-            FnVocab[generateVocabulary]
-            FnGam[awardPoints / streak engine]
-            FnSync[syncPublicProfile]
+    subgraph Supabase["Supabase — trusted"]
+        Auth[Auth / JWT]
+        subgraph PG["Postgres"]
+            RLS[(Tables + RLS)]
+            RPC[[SECURITY DEFINER<br/>functions]]
+            VIEW[[public_profiles view]]
         end
-        SM[Secret Manager]
+        ST[(Storage: speech, avatars)]
+        subgraph EF["Edge Functions"]
+            F1[fred-turn]
+            F2[generate-vocabulary]
+            F3[award-game-points]
+            F4[delete-account]
+        end
+        SEC[[Secrets:<br/>OPENAI_API_KEY]]
     end
 
-    subgraph External["External AI APIs"]
-        STT[Speech-to-Text]
-        LLM[GPT-4o / LLM]
-    end
+    AI[OpenAI API]
 
     UI --> SDK
     SDK <-->|sign in| Auth
-    SDK <-->|read own data, rules-enforced| FS
-    Rec -->|upload audio| CS
-    SDK -->|callable + App Check token| FnFred
-    SDK -->|callable| FnVocab
-    AC -.attest.-> CF
+    SDK <-->|own rows only| RLS
+    SDK -->|safe read APIs| RPC
+    Rec -->|upload to own folder| ST
+    SDK -->|JWT| EF
 
-    FnFred -->|read audio| CS
-    FnFred -->|key from| SM
-    FnFred -->|transcribe| STT
-    FnFred -->|prompt + analysis| LLM
-    FnFred -->|Admin SDK write| FS
-    FnFred --> FnGam
-    FnVocab --> LLM
-    FnVocab -->|Admin SDK write| FS
-    FnGam -->|authoritative points/streak| FS
-    FS -->|onWrite trigger| FnSync
-    FnSync -->|public fields only| FS
+    F1 --> ST
+    F1 --> SEC
+    F1 --> AI
+    F2 --> AI
+    F1 -->|record_fred_session| RPC
+    F3 -->|award_points| RPC
+    RPC --> RLS
+    VIEW --> RLS
 ```
 
-**Key principle:** the client reads its own data directly from Firestore (fast, cheap, rules-enforced), but **every paid AI call and every score-affecting write goes through a Cloud Function**. The client never holds an API key and can never mint its own points.
+**Principle:** the client reads and writes its *own* ordinary data straight
+through RLS — fast and cheap. Anything that spends money or affects ranking
+goes through an Edge Function and a SECURITY DEFINER function.
 
-## 3. FRED — Secure AI Speaking Flow
-
-This answers the architectural questions directly.
-
-### 3.1 How should FRED interact with the database?
-
-FRED never runs on the client. The client only **captures audio** and **calls a function**. A trusted Cloud Function (`fredTurn`) does the AI work and writes results using the Admin SDK (which bypasses security rules — see §4). The client then reads the resulting `fred_sessions` document back through normal, rules-protected reads.
-
-### 3.2 End-to-end sequence
+## 3. FRED — the speaking loop
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant CS as Cloud Storage
-    participant Fn as fredTurn (Function)
-    participant SM as Secret Manager
-    participant AI as STT + GPT-4o
-    participant FS as Firestore
+    participant S as Storage
+    participant F as fred-turn
+    participant AI as OpenAI
+    participant DB as Postgres
 
-    C->>CS: upload audio/{uid}/{sessionId}.webm (Storage rules: own folder only)
-    C->>Fn: callable fredTurn({sessionId, storagePath}) + Auth + App Check
-    Fn->>Fn: verify context.auth + App Check; check quota (usage doc)
-    Fn->>CS: download audio
-    Fn->>SM: read OPENAI_API_KEY (runtime only)
-    Fn->>AI: transcribe -> user_response_text
-    Fn->>AI: GPT-4o: analysis_text, performance_score, next prompt
-    Fn->>FS: Admin SDK write users/{uid}/fred_sessions/{sessionId}
-    Fn->>FS: Admin SDK update usage + award Star Points + streak
-    Fn-->>C: { transcript, analysis, score, nextPrompt }
-    C->>FS: read fred_sessions (rules: owner read-only)
+    C->>S: upload speech/<uid>/<id>.webm (storage RLS: own folder)
+    C->>F: POST { audioPath, prompt, challengeId } + JWT
+    F->>F: verify JWT → uid; reject path outside uid/
+    F->>DB: consume_daily_quota(uid)   ← spend guard
+    F->>S: download audio (service role)
+    F->>AI: transcribe → text
+    F->>AI: GPT-4o → feedback, score, next prompt
+    F->>DB: record_fred_session(...)  ← session + points + streak + challenge
+    F->>S: delete raw audio
+    F-->>C: transcript, analysis, score, nextPrompt
+    C->>DB: read fred_sessions (RLS: owner only)
 ```
 
-### 3.3 Managing cost & tokens securely
+### Why the AI call cannot live in the client
+A shipped bundle is fully readable, so an embedded key is a published key. The
+Edge Function is the trust boundary: it verifies the JWT, enforces the quota,
+holds the secret, fixes the system prompt, and writes the authoritative result.
+The same pattern serves `generate-vocabulary`.
 
-| Risk | Mitigation |
-|------|-----------|
-| API key leakage | Key lives **only** in Secret Manager, injected into the Function runtime. Never shipped to client, never in Firestore, never in git. |
-| Someone scripting your function to burn your budget | **Firebase App Check** (attestation) + `context.auth` required on every callable. Reject unauthenticated/unattested calls before any AI call. |
-| A single user running up huge bills | Per-user **quota/rate limit**: `users/{uid}/usage/{yyyy-mm}` doc tracks `sessionCount`, `tokensUsed`, `audioSeconds`. Function refuses once the daily/monthly cap is hit. |
-| Oversized prompts / runaway tokens | Server-side caps: trim transcript length, set `max_tokens`, fix the system prompt server-side (client cannot inject arbitrary prompts). |
-| Cost blindness | Store `tokensUsed` and `costEstimate` per session; a daily aggregation function + GCP **budget alerts** give visibility. |
-| Audio storage cost & privacy | Storage **lifecycle rule** auto-deletes raw audio after processing (e.g. 24h). Keep only the transcript. |
+### Cost control
+- Per-user **daily quota**, checked and incremented atomically in Postgres.
+- Server-fixed `max_tokens`; learner input length-clipped before the call.
+- `tokens_used` recorded per session and per day in `usage_daily`.
+- Raw audio deleted immediately after transcription.
+- OpenAI account spend cap as the final backstop.
 
-### 3.4 Should we use Firebase Functions to isolate keys?
+## 4. Where authorisation lives
 
-**Yes — this is non-negotiable.** A client-side app (web or mobile) is fully inspectable; any embedded key is compromised the moment the app ships. Cloud Functions are the standard, correct trust boundary: they authenticate the caller, enforce quotas, hold the secret, call the paid API, and write authoritative results. The same pattern is reused for `generateVocabulary` (feature A).
+| Concern | Enforced by |
+|---------|-------------|
+| "Can I see this row?" | RLS policy on the table |
+| "Can I see this *column* of someone else's row?" | `public_profiles` view (explicit column list) |
+| "Can I change this column?" | RLS `with check` + column-freeze triggers |
+| "Can I earn these points?" | `award_points()` — no client EXECUTE grant |
+| "Can I afford this AI call?" | `consume_daily_quota()` |
+| "Is this really me?" | `getUser()` on the verified JWT in Edge Functions |
 
-## 4. Trust Boundary & the Admin SDK
+Full threat model: [`SECURITY.md`](SECURITY.md).
 
-- **Client SDK** → subject to Firestore/Storage **security rules**. Used for the user's own reads and harmless writes (editing their own profile, deleting their own vocabulary).
-- **Admin SDK** (inside Functions) → **bypasses rules**, runs with full privilege. Used for everything that must be tamper-proof: writing FRED sessions, awarding Star Points, advancing streaks, unlocking mascot outfits, syncing public profiles.
+## 5. Repository layout
 
-This split is why the security rules (see `firestore.rules`) make `fred_sessions`, gamification fields, `public_profiles`, and challenge scores **read-only or closed to clients** — the server is the sole author.
-
-## 5. Reference Function Skeleton
-
-See the `functions/` TypeScript project (`functions/src/`) for the implementation of `fredTurn`, `generateVocabulary`, `awardGamePoints`, `syncPublicProfile`, and `deleteMyAccount`, including the App Check + auth + quota guards described above. See `functions/README.md` for setup, secrets, and deploy steps.
+```
+supabase/
+  migrations/
+    0001_schema.sql      tables, enums, constraints, public_profiles view
+    0002_rls.sql         RLS policies, grants, column-freeze triggers
+    0003_functions.sql   server-authoritative logic + safe read APIs
+    0004_storage.sql     buckets and object policies
+  functions/
+    _shared/             http (CORS), auth (JWT), ai (OpenAI)
+    fred-turn/ generate-vocabulary/ award-game-points/ delete-account/
+app/
+  src/pages/             one file per screen
+  src/lib/               api (single data-access layer), session, types
+```

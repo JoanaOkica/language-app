@@ -1,20 +1,23 @@
 # Dependencies
 node_modules/
-functions/node_modules/
 
-# Firebase
-.firebase/
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-*-debug.log
+# Build output
+dist/
+app/dist/
 
-# Secrets / local config — NEVER commit
+# Secrets — NEVER commit
 .env
 .env.*
-*serviceAccount*.json
-.runtimeconfig.json
+!.env.example
+**/.env
+**/.env.local
 
-# OS / editor
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+.supabase/
+
+# Logs / OS / editor
+*.log
 .DS_Store
 *.swp
