@@ -57,7 +57,7 @@ export default function GamesPage() {
       ))}
 
       <p className="sub" style={{ textAlign: "center", fontSize: 12.5, marginTop: 14 }}>
-        Games use the words FRED gave you, so your practice is always relevant. 🦊
+        Games use the words FRED gave you, so your practice is always relevant. 🐱
       </p>
     </>
   );

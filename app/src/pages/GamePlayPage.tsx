@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { awardGamePoints, listVocabulary } from "../lib/api";
 import { useSession } from "../lib/session";
-import { GAMES, GameId } from "../lib/types";
+import { GAMES, GameId, speechTag } from "../lib/types";
 import type { VocabWord } from "../lib/types";
 
 const ROUNDS = 5;
@@ -13,7 +13,9 @@ const shuffle = <T,>(a: T[]): T[] => [...a].sort(() => Math.random() - 0.5);
 export default function GamePlayPage() {
   const { gameId } = useParams<{ gameId: GameId }>();
   const navigate = useNavigate();
-  const { refresh } = useSession();
+  const { profile, refresh } = useSession();
+  // Read the word aloud in the language being learned, not a hardcoded one.
+  const speechLang = speechTag(profile?.target_language);
 
   const game = GAMES.find((g) => g.id === gameId);
   const [words, setWords] = useState<VocabWord[] | null>(null);
@@ -91,19 +93,21 @@ export default function GamePlayPage() {
       ) : game.id === "builder" ? (
         <BuilderRound key={round} words={words} onDone={next} />
       ) : (
-        <ChoiceRound key={round} words={words} listen={game.id === "echo"} onDone={next} />
+        <ChoiceRound key={round} words={words} listen={game.id === "echo"}
+                     speechLang={speechLang} onDone={next} />
       )}
     </>
   );
 }
 
-/* ---------------- Quick Quiz & Echo Fox: pick the translation ---------------- */
+/* ---------------- Quick Quiz & Echo Cat: pick the translation ---------------- */
 
 function ChoiceRound({
-  words, listen, onDone,
+  words, listen, speechLang, onDone,
 }: {
   words: VocabWord[];
   listen: boolean;
+  speechLang: string;
   onDone: (right: boolean) => void;
 }) {
   const { target, options } = useMemo(() => {
@@ -118,9 +122,9 @@ function ChoiceRound({
   const speak = useCallback(() => {
     if (!("speechSynthesis" in window)) return;
     const u = new SpeechSynthesisUtterance(target.word);
-    u.lang = "es-ES";
+    u.lang = speechLang;
     window.speechSynthesis.speak(u);
-  }, [target.word]);
+  }, [target.word, speechLang]);
 
   useEffect(() => { if (listen) speak(); }, [listen, speak]);
 

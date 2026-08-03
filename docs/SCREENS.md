@@ -18,10 +18,10 @@ Warm cream + orange theme, five-tab navigation, customisable avatars.
 | **1. Sign in**<br>Generic failure message so accounts cannot be enumerated.<br><img src="screens/01-signin.png" width="330"> | **2. Set up your den**<br>Avatar picker, language chips, and plain-English levels.<br><img src="screens/02-onboarding.png" width="330"> |
 | **3. Today**<br>Daily XP goal, week strip, four action tiles, today's words, league.<br><img src="screens/03-today.png" width="330"> | **4. Plan**<br>Describe your day → FRED packs the words you'll need.<br><img src="screens/04-plan.png" width="330"> |
 | **5. Repeated routine**<br>Same day described twice adds nothing — and says so.<br><img src="screens/05-plan-repeat.png" width="330"> | **6. Your words**<br>One card per word; "café" carries 3 contexts, not 3 duplicates.<br><img src="screens/06-words.png" width="330"> |
-| **7. Talk — FRED**<br>Unchanged speaking coach: record, transcribe, score.<br><img src="screens/07-fred.png" width="330"> | **8. Games**<br>Four mini-games built from the learner's own vocabulary.<br><img src="screens/08-games.png" width="330"> |
+| **7. Talk — FRED**<br>Speaking coach: record, transcribe, score.<br><img src="screens/07-fred.png" width="330"> | **8. Games**<br>Four mini-games built from the learner's own vocabulary.<br><img src="screens/08-games.png" width="330"> |
 | **9. Sentence Builder**<br>Tap the words into the right order.<br><img src="screens/09-game-builder.png" width="330"> | **10. Friends**<br>Search by username, accept requests, compare streaks.<br><img src="screens/10-friends.png" width="330"> |
 | **11. Challenges**<br>FRED sprints against a friend, scored server-side.<br><img src="screens/11-challenges.png" width="330"> | **12. Your den**<br>Avatar, languages, level, privacy — and account deletion.<br><img src="screens/12-den.png" width="330"> |
-| **13. Delete account**<br>Type-to-confirm before permanent erasure.<br><img src="screens/13-delete-account.png" width="330"> | |
+| **13. Any language pairing**<br>Portuguese speaker learning French — all 22 languages pair freely.<br><img src="screens/13-language-pairing.png" width="330"> | **14. Same-language guard**<br>You can't "learn" the language you already speak.<br><img src="screens/14-same-language-blocked.png" width="330"> |
 
 ## Navigation
 

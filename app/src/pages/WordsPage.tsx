@@ -66,7 +66,7 @@ export default function WordsPage() {
       ) : visible.length === 0 ? (
         <div className="card">
           <p className="empty">
-            <span className="fox">🦊</span>
+            <span className="mascot-sm">🐱</span>
             No words here yet.
           </p>
           <button className="full" onClick={() => navigate("/plan")}>Plan my day</button>

@@ -36,7 +36,7 @@ function word(w: string, t: string, pos: string, ex: WordExample[], ageHours = 0
 export const state: DemoState = {
   signedIn: false,
   profile: {
-    id: ME, username: "joana", display_name: "joana", avatar: "fox",
+    id: ME, username: "joana", display_name: "joana", avatar: "cat",
     native_language: "English", target_language: "Spanish",
     level: "beginner", is_public: true, onboarded: false,
   },

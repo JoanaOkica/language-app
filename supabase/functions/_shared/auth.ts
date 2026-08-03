@@ -12,9 +12,9 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 /** Every table, view and RPC lives here — never in `public`. */
-export const SCHEMA = "linguafox";
-export const BUCKET_SPEECH = "linguafox-speech";
-export const BUCKET_AVATARS = "linguafox-avatars";
+export const SCHEMA = "cats_tongue";
+export const BUCKET_SPEECH = "cats-tongue-speech";
+export const BUCKET_AVATARS = "cats-tongue-avatars";
 
 export interface Caller {
   userId: string;

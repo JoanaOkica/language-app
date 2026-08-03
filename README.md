@@ -1,114 +1,215 @@
-# Linguafox — language learning app (MVP)
+<div align="center">
 
-Learn the words your day actually needs, then practise saying them out loud with
-**FRED**, an AI speaking coach.
+# 🐱 Cat's Tongue
 
-Built on **Supabase** (Postgres + Auth + Storage + Edge Functions) with a
-**React + TypeScript** client — warm cream-and-orange theme, five-tab
-navigation, customisable avatars.
+**Learn the words your day actually needs — then say them out loud.**
 
-## Features
+Tell the app what you're doing today; it packs the exact vocabulary for it.
+Then practise speaking with **FRED**, an AI coach who scores your pronunciation,
+grammar and fluency.
 
-| | Feature | Status |
-|---|---------|--------|
-| A | **Task-based vocabulary** — describe an activity, get a level-appropriate word & sentence list | ✅ |
-| B | **Vocabulary library** — one card per word with every context it appears in; alphabetical by default, filter by date, search | ✅ |
-| C | **FRED** — record speech, get transcription, coaching feedback and a score | ✅ |
-| D | **Gamification** — streaks, XP and four mini-games, server-authoritative | ✅ |
-| E | **Avatars & leagues** — ten avatars to choose from, XP leagues Kit → Elder | ✅ |
-| F | **Profiles & friends** — search, friend requests, public profiles, leaderboard | ✅ |
-| G | **Friendly competition** — FRED sprint challenges between friends | ✅ |
+<img src="docs/screens/03-today.png" width="250" alt="Today dashboard">
+<img src="docs/screens/06-words.png" width="250" alt="Vocabulary cards">
+<img src="docs/screens/07-fred.png" width="250" alt="FRED speaking coach">
 
-Screens: **[docs/SCREENS.md](docs/SCREENS.md)**
+React · TypeScript · Supabase (Postgres + Auth + Storage + Edge Functions) · Capacitor
 
-## Documentation
+</div>
 
-| Doc | Contents |
-|-----|----------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System diagram, the FRED loop, cost control, where authorisation lives |
-| [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) | Tables, columns, indexes, functions and the reasoning behind them |
-| [SECURITY.md](docs/SECURITY.md) | Threat model, mitigations, deployment checklist, known gaps |
-| [PENTEST.md](docs/PENTEST.md) | Adversarial review: 4 findings (1 high) with fixes, plus what was probed and cleared |
-| [AUTH.md](docs/AUTH.md) | Sign-up, confirmation, the 24-hour purge, password reset, deletion |
-| [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Build order and what ships when |
-| [SCREENS.md](docs/SCREENS.md) | Every page, captured from the running app |
+---
 
-## Layout
+## What it does
 
-```
-supabase/
-  migrations/   0001 schema · 0002 RLS · 0003 functions · 0004 storage · 0005 auth lifecycle
-  functions/    fred-turn, generate-vocabulary, award-game-points,
-                delete-account, purge-unconfirmed
-app/
-  src/pages/    one file per screen
-  src/lib/      api (single data-access layer), session, password policy, types
-  scripts/      e2e.cjs — 30-check functional pass
-  android/      Capacitor project (built into an APK by CI)
-docs/
-```
+| | Feature |
+|---|---------|
+| 📝 | **Plan your day** — describe an activity in plain language, get vocabulary tuned to your level |
+| 📚 | **One card per word** — a word you already know gains a *new sentence* for the new situation instead of a duplicate |
+| 🎙️ | **FRED** — record your answer, get a transcript, coaching feedback and a score |
+| 🎮 | **Four mini-games** — Word Match, Quick Quiz, Echo Cat, Sentence Builder, all built from *your* words |
+| 🔥 | **Streaks & XP leagues** — Kitten → Whiskers → Prowler → Panther → Legend |
+| 👥 | **Friends** — search by username, compare streaks, climb the leaderboard |
+| 🏆 | **Challenges** — race a friend through FRED speaking sprints |
 
-## Sharing a Supabase project
+**22 languages, any pairing.** Portuguese speaker learning French, Japanese
+speaker learning Spanish, English speaker learning Greek — the same list feeds
+both "I speak" and "I'm learning". The only rule is that the two differ.
 
-Everything lives in a dedicated **`linguafox` schema**, so this app can sit in
-the same Supabase project as your other work without colliding with it:
+---
 
-- no object is created in, altered in, or revoked from `public`;
-- no extensions are installed;
-- **no trigger on `auth.users`** — profiles are provisioned lazily by
-  `ensure_profile()`, so other apps' signups are untouched;
-- storage buckets and policies are prefixed `linguafox-` / `linguafox_`;
-- the unconfirmed-signup purge only ever deletes users tagged
-  `raw_user_meta_data->>'app' = 'linguafox'`.
+## The screens
 
-`drop schema linguafox cascade` removes the app entirely and leaves the rest of
-the project intact.
+<table>
+<tr>
+<td align="center" width="33%"><img src="docs/screens/01-signin.png" width="220"><br><sub><b>Sign in</b><br>Generic errors — no account enumeration</sub></td>
+<td align="center" width="33%"><img src="docs/screens/02-onboarding.png" width="220"><br><sub><b>Set up your den</b><br>Avatar, languages, level</sub></td>
+<td align="center" width="33%"><img src="docs/screens/03-today.png" width="220"><br><sub><b>Today</b><br>Daily goal, streak, quick actions</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screens/04-plan.png" width="220"><br><sub><b>Plan</b><br>Describe your day, get words</sub></td>
+<td align="center"><img src="docs/screens/05-plan-repeat.png" width="220"><br><sub><b>Repeat a routine</b><br>Adds nothing, and says so</sub></td>
+<td align="center"><img src="docs/screens/06-words.png" width="220"><br><sub><b>Your words</b><br>One card, many contexts</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screens/07-fred.png" width="220"><br><sub><b>FRED</b><br>Score + coaching feedback</sub></td>
+<td align="center"><img src="docs/screens/08-games.png" width="220"><br><sub><b>Games</b><br>Built from your vocabulary</sub></td>
+<td align="center"><img src="docs/screens/09-game-builder.png" width="220"><br><sub><b>Sentence Builder</b><br>Tap words into order</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screens/10-friends.png" width="220"><br><sub><b>Friends</b><br>Search, requests, streaks</sub></td>
+<td align="center"><img src="docs/screens/11-challenges.png" width="220"><br><sub><b>Challenges</b><br>FRED sprints, scored server-side</sub></td>
+<td align="center"><img src="docs/screens/12-den.png" width="220"><br><sub><b>Your den</b><br>Profile, privacy, deletion</sub></td>
+</tr>
+</table>
 
-## Android APK
+<details>
+<summary><b>Account lifecycle</b> — sign-up, confirmation, password reset</summary>
+<br>
+<table>
+<tr>
+<td align="center" width="25%"><img src="docs/screens/a1-signup-weak.png" width="190"><br><sub>Weak password blocked</sub></td>
+<td align="center" width="25%"><img src="docs/screens/a3-signup-strong.png" width="190"><br><sub>Strong password accepted</sub></td>
+<td align="center" width="25%"><img src="docs/screens/a4-confirm-gate.png" width="190"><br><sub>Email confirmation gate</sub></td>
+<td align="center" width="25%"><img src="docs/screens/a8-reset-password.png" width="190"><br><sub>Password reset</sub></td>
+</tr>
+</table>
+</details>
 
-The web app is wrapped with Capacitor. CI builds the APK:
+<details>
+<summary><b>Any language pairing</b></summary>
+<br>
+<table>
+<tr>
+<td align="center" width="50%"><img src="docs/screens/13-language-pairing.png" width="220"><br><sub>Portuguese speaker learning French</sub></td>
+<td align="center" width="50%"><img src="docs/screens/14-same-language-blocked.png" width="220"><br><sub>Can't "learn" what you already speak</sub></td>
+</tr>
+</table>
+</details>
 
-**Actions → Build Android APK → Run workflow** → download the `linguafox-apk`
-artifact. Set the repository secrets `VITE_SUPABASE_URL` and
-`VITE_SUPABASE_ANON_KEY` first.
+---
 
-Locally (needs the Android SDK):
-```bash
-cd app && npm run build && npx cap sync android
-cd android && ./gradlew assembleDebug
-# app/android/app/build/outputs/apk/debug/app-debug.apk
-```
+## Try it in 30 seconds
 
-## Running it
+No backend, no account, no configuration:
 
-### Frontend, no backend needed
 ```bash
 cd app
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # → http://localhost:5173
 ```
-Without `.env` the app runs in **demo mode** against an in-memory store, so every
-screen works offline. Useful for design review.
 
-### Against a real Supabase project
+Without a `.env` the app runs in **demo mode** against an in-memory store, so
+every screen works offline. Sign up with any email, click *Simulate
+confirmation*, and explore.
+
+---
+
+## How it's built
+
+```
+app/                  React + TypeScript + Vite
+  src/pages/          one file per screen
+  src/lib/            api (single data-access layer), session, password policy
+  scripts/e2e.cjs     30-check end-to-end pass
+  android/            Capacitor project (CI turns this into an APK)
+
+supabase/
+  migrations/         schema · RLS · functions · storage · auth lifecycle
+  functions/          fred-turn, generate-vocabulary, award-game-points,
+                      delete-account, purge-unconfirmed
+
+docs/                 architecture, schema, security, pentest, auth, screens
+```
+
+The client holds no secrets and never writes its own score. Every AI call and
+every point goes through an Edge Function that authenticates the caller,
+enforces a per-user daily quota, and writes the result through database
+functions the client has no permission to execute.
+
+| Doc | What's in it |
+|-----|--------------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System diagram, the FRED loop, cost control |
+| [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) | Tables, indexes, functions and the reasoning |
+| [SECURITY.md](docs/SECURITY.md) | Threat model and mitigations |
+| [PENTEST.md](docs/PENTEST.md) | Adversarial review — 4 findings, fixed |
+| [AUTH.md](docs/AUTH.md) | Sign-up, confirmation, 24-hour purge, reset, deletion |
+| [SCREENS.md](docs/SCREENS.md) | Every screen, captured from the running app |
+
+---
+
+## Sharing one Supabase project
+
+Everything lives in a dedicated **`cats_tongue` schema**, so this can sit
+alongside other apps in the same Supabase project without disturbing them:
+
+- nothing is created in, altered in, or revoked from `public`;
+- no extensions are installed;
+- **no trigger on `auth.users`** — profiles are provisioned lazily, so other
+  apps' signups are unaffected;
+- storage buckets and policies are prefixed `cats-tongue-`;
+- the unconfirmed-signup purge only ever deletes accounts tagged as ours.
+
+`drop schema cats_tongue cascade` removes the app entirely and leaves the rest
+of the project intact.
+
+---
+
+## Running against a real backend
+
 ```bash
-cp app/.env.example app/.env      # fill in URL + anon key
-supabase db push                  # creates the linguafox schema only
+cp app/.env.example app/.env       # fill in your project URL + anon key
+supabase db push                   # creates the cats_tongue schema only
 supabase functions deploy fred-turn generate-vocabulary award-game-points delete-account
 supabase functions deploy purge-unconfirmed --no-verify-jwt
-supabase secrets set OPENAI_API_KEY=sk-... ALLOWED_ORIGINS=https://your-app.com PURGE_SECRET=...
 ```
-Then expose the schema to the API: **Settings → API → Exposed schemas** must
-include `linguafox`. Auth settings that the security model depends on are
-listed in [AUTH.md §6](docs/AUTH.md).
 
-## Security in one paragraph
+Then, in the Supabase dashboard:
 
-Every user is treated as a potential attacker holding a valid JWT and the public
-anon key. Row Level Security isolates all data in Postgres; a `public_profiles`
-view provides column-level privacy that RLS alone cannot. Star Points, streaks,
-FRED sessions and challenge scores are written **only** by SECURITY DEFINER
-functions the client has no permission to execute, so scores cannot be forged.
-The AI key lives in Edge Function secrets and never reaches the browser, and a
-per-user daily quota bounds spend. Full detail — including known gaps — in
-[SECURITY.md](docs/SECURITY.md).
+1. **Settings → API → Exposed schemas** — add `cats_tongue`.
+2. **Edge Function secrets** — set the AI provider key, the allowed origins and
+   the purge secret.
+3. **Auth** — enable email confirmation, a 12-character minimum and
+   leaked-password protection. Full list in [AUTH.md §6](docs/AUTH.md).
+
+> **Configuration lives outside this repository.** Only `app/.env.example` is
+> committed, and it contains placeholders. The `VITE_`-prefixed values are
+> bundled into the client and are public by design — Row Level Security is what
+> protects the data. Service-role keys and AI provider keys belong in Edge
+> Function secrets and must never be given a `VITE_` name.
+
+---
+
+## Android APK
+
+The web app is wrapped with Capacitor and built by CI:
+
+**Actions → Build Android APK → Run workflow** → download the `cats-tongue-apk`
+artifact.
+
+Locally, with the Android SDK installed:
+
+```bash
+cd app && npm run build && npx cap sync android
+cd android && ./gradlew assembleDebug
+# → app/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## Tests
+
+```bash
+cd app && npm run dev
+node scripts/e2e.cjs     # 30 checks: signup → daily use → reset → delete
+```
+
+Covers password-policy enforcement, the confirmation gate, repeated-routine
+de-duplication, FRED scoring, the mini-games, the social graph and password
+recovery.
+
+---
+
+## Status
+
+Working and demoable end-to-end in the browser. The Supabase migrations and
+Edge Functions are written and reviewed but have not yet been run against a
+live project — that is the next step, along with the dashboard settings above.

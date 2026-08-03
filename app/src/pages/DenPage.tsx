@@ -11,7 +11,7 @@ export default function DenPage() {
   const { profile, stats, refresh } = useSession();
 
   const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
-  const [avatar, setAvatar] = useState(profile?.avatar ?? "fox");
+  const [avatar, setAvatar] = useState(profile?.avatar ?? "cat");
   const [target, setTarget] = useState(profile?.target_language ?? "Spanish");
   const [native, setNative] = useState(profile?.native_language ?? "English");
   const [level, setLevel] = useState<Level>(profile?.level ?? "beginner");
@@ -28,7 +28,16 @@ export default function DenPage() {
   const xp = stats?.star_points ?? 0;
   const league = leagueFor(xp);
 
+  const sameLanguage = native === target;
+
   async function save() {
+    // Onboarding enforces this too; without it here you could end up "learning"
+    // the language you already speak, and the generator would be asked to
+    // translate a language into itself.
+    if (sameLanguage) {
+      setError("Pick a language to learn that's different from the one you speak.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setSaved(false);
@@ -145,7 +154,13 @@ export default function DenPage() {
           When hidden you disappear from search and leaderboards. Your XP and streak stay private.
         </p>
 
-        <button className="full" onClick={() => void save()} disabled={busy} style={{ marginTop: 16 }}>
+        {sameLanguage && (
+          <p className="sub" style={{ color: "#b3261e", marginTop: 12 }}>
+            Pick a language to learn that's different from the one you speak.
+          </p>
+        )}
+        <button className="full" onClick={() => void save()}
+                disabled={busy || sameLanguage} style={{ marginTop: 16 }}>
           {busy ? "Saving…" : saved ? "Saved ✓" : "Save changes"}
         </button>
       </div>

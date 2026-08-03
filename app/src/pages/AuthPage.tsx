@@ -232,8 +232,8 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="center">
       <div className="auth-box">
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 46 }}>🦊</div>
-          <h1>Lingua<span style={{ color: "var(--orange)" }}>fox</span></h1>
+          <div style={{ fontSize: 46 }} aria-hidden="true">🐱</div>
+          <h1>Cat's<span style={{ color: "var(--orange)" }}> Tongue</span></h1>
           <p className="sub">Learn the words your day actually needs.</p>
         </div>
         {children}

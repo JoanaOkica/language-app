@@ -22,7 +22,7 @@ const COMMON = new Set([
   "princess", "shadow", "michael", "jennifer", "trustno", "starwars",
   "abc", "abcd", "abcdef", "abcdefg", "test", "guest", "user", "changeme",
   "secret", "hello", "freedom", "whatever", "computer", "internet",
-  "linguafox", "language", "spanish", "english",
+  "catstongue", "catstongue1", "language", "spanish", "english",
 ]);
 
 const SEQUENCES = [

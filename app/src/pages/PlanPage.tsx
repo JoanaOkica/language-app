@@ -75,7 +75,7 @@ export default function PlanPage() {
       {words.length === 0 ? (
         <div className="card">
           <p className="empty">
-            <span className="fox">🦊</span>
+            <span className="mascot-sm">🐱</span>
             Tell FRED your plans above and your word cards will appear here.
           </p>
         </div>

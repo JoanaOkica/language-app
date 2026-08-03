@@ -36,7 +36,7 @@ export const auth = {
    * enabled Supabase returns no session, so the user cannot get in until they
    * click the link — and an unconfirmed account is purged after 24 hours.
    *
-   * The `app` tag scopes that purge to Linguafox signups only, so it can never
+   * The `app` tag scopes that purge to Cat's Tongue signups only, so it can never
    * touch accounts created by the other projects sharing this Supabase instance.
    */
   async signUp(email: string, password: string): Promise<void> {

@@ -8,7 +8,7 @@ export default function OnboardingPage() {
   const { profile, refresh } = useSession();
   const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
   const [username, setUsername] = useState(profile?.username ?? "");
-  const [avatar, setAvatar] = useState("fox");
+  const [avatar, setAvatar] = useState("cat");
   const [native, setNative] = useState(profile?.native_language ?? "English");
   const [target, setTarget] = useState(profile?.target_language ?? "Spanish");
   const [level, setLevel] = useState<Level>("beginner");
@@ -51,7 +51,7 @@ export default function OnboardingPage() {
     <div className="shell">
       <form className="content" onSubmit={submit}>
         <div style={{ textAlign: "center", padding: "18px 0 8px" }}>
-          <div style={{ fontSize: 44 }}>🦊</div>
+          <div style={{ fontSize: 44 }} aria-hidden="true">🐱</div>
           <h1>Set up your den</h1>
           <p className="sub">This tunes your words and FRED's coaching.</p>
         </div>

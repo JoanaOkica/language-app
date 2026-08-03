@@ -25,12 +25,12 @@ button stays disabled until the password passes and the two entries match.
 
 ## 2. Confirmation gate
 
-`signUp` is called with `options.data = { app: 'linguafox' }` and email
+`signUp` is called with `options.data = { app: 'cats_tongue' }` and email
 confirmations enabled, so:
 
 - **no session is issued** — the user physically cannot enter the app;
 - the UI shows a "confirm your email" screen with a **resend** button;
-- `linguafox.ensure_profile()` refuses to create the profile and stats rows
+- `cats_tongue.ensure_profile()` refuses to create the profile and stats rows
   while `auth.users.email_confirmed_at is null`.
 
 That last point matters: confirmation is enforced **in the database**, not only
@@ -39,15 +39,15 @@ profile, so it has nothing to use.
 
 ## 3. The 24-hour expiry
 
-`linguafox.purge_unconfirmed_signups(interval '24 hours')` deletes accounts
+`cats_tongue.purge_unconfirmed_signups(interval '24 hours')` deletes accounts
 where **all four** hold:
 
 | Condition | Why |
 |-----------|-----|
-| `raw_user_meta_data->>'app' = 'linguafox'` | Scopes the purge to our signups. `auth.users` is shared with the other projects in this Supabase instance — a blanket "delete unconfirmed users" job would delete their pending signups too. |
+| `raw_user_meta_data->>'app' = 'cats_tongue'` | Scopes the purge to our signups. `auth.users` is shared with the other projects in this Supabase instance — a blanket "delete unconfirmed users" job would delete their pending signups too. |
 | `email_confirmed_at is null` | Never verified. |
 | `created_at < now() - 24 hours` | Past the grace period. |
-| no row in `linguafox.profiles` | Belt and braces — profiles only exist post-confirmation. |
+| no row in `cats_tongue.profiles` | Belt and braces — profiles only exist post-confirmation. |
 
 Scheduling, in order of preference:
 
@@ -57,7 +57,7 @@ Scheduling, in order of preference:
 2. **`purge-unconfirmed` Edge Function** — call it hourly from any external
    scheduler with an `x-purge-secret` header matching `PURGE_SECRET`.
 
-Could a user of another app tag themselves `linguafox` to get deleted? Only
+Could a user of another app tag themselves `cats_tongue` to get deleted? Only
 their own account, and only while unconfirmed — but an unconfirmed user has no
 session and therefore cannot call `updateUser` at all. Not exploitable.
 
@@ -88,7 +88,7 @@ Two-factor by design, because it is irreversible:
    stolen or borrowed session is not enough on its own.
 
 Then storage objects are removed (foreign keys don't reach them) and the auth
-user is deleted, cascading through every Linguafox table.
+user is deleted, cascading through every Cat's Tongue table.
 
 ## 6. Dashboard settings this depends on
 
@@ -101,6 +101,6 @@ them:
 - [ ] **Leaked password protection: ON** (HaveIBeenPwned)
 - [ ] **Rate limits** on signup / signin / recovery
 - [ ] **Site URL and redirect allow-list** — must include your web origin and,
-      for the Android build, `com.linguafox.app://` if you use deep links
+      for the Android build, `com.catstongue.app://` if you use deep links
 - [ ] **SMTP configured** — the default Supabase mailer is rate-limited and not
       meant for production

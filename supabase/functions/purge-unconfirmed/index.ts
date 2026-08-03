@@ -1,10 +1,10 @@
 /**
- * purge-unconfirmed — deletes Linguafox signups that were never confirmed.
+ * purge-unconfirmed — deletes Cat's Tongue signups that were never confirmed.
  *
  * Use this when pg_cron is not enabled on the project: point any external
  * scheduler (GitHub Actions, cron-job.org, Supabase scheduled function) at it
- * hourly. It is a thin wrapper around `linguafox.purge_unconfirmed_signups()`,
- * which does the scoping — only rows tagged `app: 'linguafox'` are eligible,
+ * hourly. It is a thin wrapper around `cats_tongue.purge_unconfirmed_signups()`,
+ * which does the scoping — only rows tagged `app: 'cats_tongue'` are eligible,
  * so other projects sharing `auth.users` are never affected.
  *
  * This endpoint takes no user JWT, so it is protected by a shared secret

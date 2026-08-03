@@ -14,6 +14,7 @@ export const levelLabel = (l: Level) =>
 
 /** Avatar ids are validated by a CHECK constraint in the database. */
 export const AVATARS: Array<{ id: string; emoji: string }> = [
+  { id: "cat", emoji: "🐱" },
   { id: "fox", emoji: "🦊" },
   { id: "bear", emoji: "🐻" },
   { id: "panda", emoji: "🐼" },
@@ -24,34 +25,65 @@ export const AVATARS: Array<{ id: string; emoji: string }> = [
   { id: "owl", emoji: "🦉" },
   { id: "unicorn", emoji: "🦄" },
   { id: "penguin", emoji: "🐧" },
+  { id: "rabbit", emoji: "🐰" },
 ];
 
 export const avatarEmoji = (id: string | null | undefined) =>
-  AVATARS.find((a) => a.id === id)?.emoji ?? "🦊";
+  AVATARS.find((a) => a.id === id)?.emoji ?? "🐱";
 
+/**
+ * The same list feeds both "I speak" and "I'm learning", so any pairing works —
+ * Portuguese speaker learning French, Japanese speaker learning Spanish, and so
+ * on. The only rule is that the two must differ.
+ */
 export const LANGUAGES: Array<{ name: string; code: string }> = [
+  { name: "English", code: "GB" },
   { name: "Spanish", code: "ES" },
+  { name: "Portuguese", code: "PT" },
   { name: "French", code: "FR" },
   { name: "German", code: "DE" },
   { name: "Italian", code: "IT" },
-  { name: "Portuguese", code: "PT" },
-  { name: "Japanese", code: "JP" },
-  { name: "Korean", code: "KR" },
   { name: "Dutch", code: "NL" },
   { name: "Swedish", code: "SE" },
-  { name: "English", code: "GB" },
+  { name: "Norwegian", code: "NO" },
+  { name: "Danish", code: "DK" },
+  { name: "Polish", code: "PL" },
+  { name: "Czech", code: "CZ" },
+  { name: "Romanian", code: "RO" },
+  { name: "Greek", code: "GR" },
+  { name: "Turkish", code: "TR" },
+  { name: "Russian", code: "RU" },
+  { name: "Ukrainian", code: "UA" },
+  { name: "Arabic", code: "AR" },
+  { name: "Hindi", code: "IN" },
+  { name: "Mandarin", code: "CN" },
+  { name: "Japanese", code: "JP" },
+  { name: "Korean", code: "KR" },
 ];
 
 export const langCode = (name: string) =>
   LANGUAGES.find((l) => l.name === name)?.code ?? "??";
 
+/** BCP-47 tags for speech synthesis (Echo Cat reads the target language aloud). */
+const SPEECH_TAGS: Record<string, string> = {
+  English: "en-GB", Spanish: "es-ES", Portuguese: "pt-PT", French: "fr-FR",
+  German: "de-DE", Italian: "it-IT", Dutch: "nl-NL", Swedish: "sv-SE",
+  Norwegian: "nb-NO", Danish: "da-DK", Polish: "pl-PL", Czech: "cs-CZ",
+  Romanian: "ro-RO", Greek: "el-GR", Turkish: "tr-TR", Russian: "ru-RU",
+  Ukrainian: "uk-UA", Arabic: "ar-SA", Hindi: "hi-IN", Mandarin: "zh-CN",
+  Japanese: "ja-JP", Korean: "ko-KR",
+};
+
+export const speechTag = (language: string | null | undefined) =>
+  SPEECH_TAGS[language ?? ""] ?? "en-GB";
+
 /** XP leagues — presentational, derived from star_points. */
 export const LEAGUES = [
-  { id: "kit", name: "Kit", icon: "🥚", at: 0 },
-  { id: "cub", name: "Cub", icon: "🐣", at: 250 },
-  { id: "fox", name: "Fox", icon: "🦊", at: 750 },
-  { id: "ranger", name: "Ranger", icon: "🏅", at: 1500 },
-  { id: "elder", name: "Elder", icon: "👑", at: 3000 },
+  { id: "kitten", name: "Kitten", icon: "🐾", at: 0 },
+  { id: "whiskers", name: "Whiskers", icon: "🐈", at: 250 },
+  { id: "prowler", name: "Prowler", icon: "😼", at: 750 },
+  { id: "panther", name: "Panther", icon: "🐆", at: 1500 },
+  { id: "legend", name: "Legend", icon: "👑", at: 3000 },
 ] as const;
 
 export type League = (typeof LEAGUES)[number];
@@ -180,7 +212,7 @@ export interface FredTurnResult {
 export const GAMES = [
   { id: "match", name: "Word Match", desc: "Pair each word with its meaning", icon: "🧩", color: "var(--orange)" },
   { id: "quiz", name: "Quick Quiz", desc: "Pick the right translation, fast", icon: "⚡", color: "var(--teal)" },
-  { id: "echo", name: "Echo Fox", desc: "Hear it, then choose what you heard", icon: "🎧", color: "var(--pink)" },
+  { id: "echo", name: "Echo Cat", desc: "Hear it, then choose what you heard", icon: "🎧", color: "var(--pink)" },
   { id: "builder", name: "Sentence Builder", desc: "Tap the words into the right order", icon: "🏗️", color: "var(--green)" },
 ] as const;
 

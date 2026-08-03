@@ -11,11 +11,11 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 export const isDemo = !url || !anonKey;
 
 /**
- * Every Linguafox object lives in its own Postgres schema, so this project can
+ * Every Cat's Tongue object lives in its own Postgres schema, so this project can
  * share a Supabase instance with other apps without colliding with them.
  */
-export const SCHEMA = "linguafox";
-export const BUCKET_SPEECH = "linguafox-speech";
+export const SCHEMA = "cats_tongue";
+export const BUCKET_SPEECH = "cats-tongue-speech";
 
 export const supabase = isDemo
   ? null
@@ -48,4 +48,4 @@ export const FUNCTIONS = {
  * Tags the account as ours in `raw_user_meta_data`. The unconfirmed-signup
  * purge is scoped by this, so it can never delete another app's pending users.
  */
-export const APP_TAG = "linguafox";
+export const APP_TAG = "cats_tongue";

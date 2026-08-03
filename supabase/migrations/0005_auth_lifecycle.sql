@@ -6,17 +6,17 @@
 -- CO-TENANCY WARNING: `auth.users` is shared with every other app in this
 -- project, so a blanket "delete unconfirmed users" job would delete the pet
 -- game's pending signups too. The purge is therefore scoped to rows the
--- Linguafox client tagged at signup:
+-- Cat's Tongue client tagged at signup:
 --
---     supabase.auth.signUp({ ..., options: { data: { app: 'linguafox' } } })
+--     supabase.auth.signUp({ ..., options: { data: { app: 'cats_tongue' } } })
 --
 -- which lands in `raw_user_meta_data->>'app'`. A user created by any other app
 -- has no such tag and is never touched. Three further conditions must all hold:
 -- the address is still unconfirmed, the row is older than the grace period, and
--- no Linguafox profile exists (profiles are only created after confirmation).
+-- no Cat's Tongue profile exists (profiles are only created after confirmation).
 -- =============================================================================
 
-create or replace function linguafox.purge_unconfirmed_signups(
+create or replace function cats_tongue.purge_unconfirmed_signups(
   p_grace interval default interval '24 hours'
 )
 returns integer
@@ -29,11 +29,11 @@ declare
 begin
   with doomed as (
     delete from auth.users u
-    where u.raw_user_meta_data->>'app' = 'linguafox'   -- ours, and only ours
+    where u.raw_user_meta_data->>'app' = 'cats_tongue'   -- ours, and only ours
       and u.email_confirmed_at is null                 -- never verified
       and u.created_at < now() - p_grace               -- past the grace period
       and not exists (                                 -- belt and braces
-        select 1 from linguafox.profiles p where p.id = u.id
+        select 1 from cats_tongue.profiles p where p.id = u.id
       )
     returning u.id
   )
@@ -43,13 +43,13 @@ begin
 end;
 $$;
 
-comment on function linguafox.purge_unconfirmed_signups(interval) is
-  'Deletes Linguafox signups that were never email-confirmed within the grace '
+comment on function cats_tongue.purge_unconfirmed_signups(interval) is
+  'Deletes Cat''s Tongue signups that were never email-confirmed within the grace '
   'period. Scoped by raw_user_meta_data->>''app'' so other apps sharing '
   'auth.users are unaffected.';
 
-revoke all on function linguafox.purge_unconfirmed_signups(interval) from public;
-grant execute on function linguafox.purge_unconfirmed_signups(interval) to service_role;
+revoke all on function cats_tongue.purge_unconfirmed_signups(interval) from public;
+grant execute on function cats_tongue.purge_unconfirmed_signups(interval) to service_role;
 
 -- ---------------------------------------------------------------------------
 -- Hourly schedule, if pg_cron is available.
@@ -64,18 +64,18 @@ grant execute on function linguafox.purge_unconfirmed_signups(interval) to servi
 do $do$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    if exists (select 1 from cron.job where jobname = 'linguafox-purge-unconfirmed') then
-      perform cron.unschedule('linguafox-purge-unconfirmed');
+    if exists (select 1 from cron.job where jobname = 'cats-tongue-purge-unconfirmed') then
+      perform cron.unschedule('cats-tongue-purge-unconfirmed');
     end if;
     perform cron.schedule(
-      'linguafox-purge-unconfirmed',
+      'cats-tongue-purge-unconfirmed',
       '17 * * * *',                                   -- hourly, off the hour
-      $job$ select linguafox.purge_unconfirmed_signups(); $job$
+      $job$ select cats_tongue.purge_unconfirmed_signups(); $job$
     );
-    raise notice 'Scheduled hourly job linguafox-purge-unconfirmed.';
+    raise notice 'Scheduled hourly job cats-tongue-purge-unconfirmed.';
   else
     raise notice
-      'pg_cron not installed — schedule linguafox.purge_unconfirmed_signups() externally.';
+      'pg_cron not installed — schedule cats_tongue.purge_unconfirmed_signups() externally.';
   end if;
 end
 $do$;

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.linguafox.app",
-  appName: "Linguafox",
+  appId: "com.catstongue.app",
+  appName: "Cat's Tongue",
   webDir: "dist",
   android: {
     // Ship release builds over https so Supabase auth cookies and the

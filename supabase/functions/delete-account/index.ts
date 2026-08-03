@@ -1,7 +1,7 @@
 /**
  * delete-account — user-initiated erasure (GDPR "right to be forgotten").
  *
- * Deleting the auth user cascades to every Linguafox table via `on delete
+ * Deleting the auth user cascades to every Cat's Tongue table via `on delete
  * cascade`; storage objects are not covered by foreign keys, so they go first.
  * The account acted upon comes from the verified JWT only.
  *

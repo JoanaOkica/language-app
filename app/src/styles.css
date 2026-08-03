@@ -198,7 +198,7 @@ button.full { width: 100%; }
 .error { background: #fdecea; color: #8d2b20; font-size: 13px; font-weight: 600; padding: 10px 13px; border-radius: 14px; margin-bottom: 12px; }
 .notice { background: #e6f7ee; color: #1d6b45; font-size: 13px; font-weight: 600; padding: 10px 13px; border-radius: 14px; margin-bottom: 12px; }
 .empty { text-align: center; color: var(--ink-soft); font-size: 13.5px; padding: 22px 12px; }
-.empty .fox { font-size: 30px; display: block; margin-bottom: 8px; }
+.empty .mascot-sm { font-size: 30px; display: block; margin-bottom: 8px; }
 .center { min-height: 100vh; display: grid; place-items: center; padding: 22px; }
 .auth-box { width: 100%; max-width: 380px; }
 .spinner { color: var(--ink-soft); font-size: 13px; text-align: center; padding: 10px; font-weight: 600; }

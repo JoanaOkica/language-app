@@ -19,8 +19,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <span>🦊</span>
-          <span className="lf">Lingua<b>fox</b></span>
+          <span aria-hidden="true">🐱</span>
+          <span className="lf">Cat's<b> Tongue</b></span>
         </div>
         <div className="topbar-right">
           <span className="streak-pill">🔥 {stats?.streak_current ?? 0}</span>
