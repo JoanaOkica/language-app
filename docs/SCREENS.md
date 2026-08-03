@@ -1,5 +1,7 @@
 # App Screens
 
+<img src="screens/logo.png" width="260" alt="Cat's Tongue logo">
+
 Captured from the running React app (`app/`) in demo mode at 460 px width.
 Warm cream + orange theme, five-tab navigation, customisable avatars.
 

@@ -3,6 +3,7 @@ import { updateProfile } from "../lib/api";
 import { useSession } from "../lib/session";
 import { AVATARS, LANGUAGES, LEVELS } from "../lib/types";
 import type { Level } from "../lib/types";
+import { CatMark } from "../components/CatLogo";
 
 export default function OnboardingPage() {
   const { profile, refresh } = useSession();
@@ -51,7 +52,7 @@ export default function OnboardingPage() {
     <div className="shell">
       <form className="content" onSubmit={submit}>
         <div style={{ textAlign: "center", padding: "18px 0 8px" }}>
-          <div style={{ fontSize: 44 }} aria-hidden="true">🐱</div>
+          <CatMark size={72} />
           <h1>Set up your den</h1>
           <p className="sub">This tunes your words and FRED's coaching.</p>
         </div>

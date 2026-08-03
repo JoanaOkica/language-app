@@ -5,6 +5,7 @@ import { isDemo } from "../lib/supabase";
 import { demo } from "../lib/demo";
 import { checkPassword, isValidEmail, MIN_LENGTH } from "../lib/password";
 import PasswordMeter from "../components/PasswordMeter";
+import { CatLockup } from "../components/CatLogo";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -231,10 +232,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="center">
       <div className="auth-box">
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 46 }} aria-hidden="true">🐱</div>
-          <h1>Cat's<span style={{ color: "var(--orange)" }}> Tongue</span></h1>
-          <p className="sub">Learn the words your day actually needs.</p>
+        <div style={{ marginBottom: 20 }}>
+          <CatLockup />
         </div>
         {children}
       </div>

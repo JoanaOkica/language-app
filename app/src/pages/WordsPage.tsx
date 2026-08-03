@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { deleteWord, listVocabulary, VocabRange, VocabSort } from "../lib/api";
 import type { VocabWord } from "../lib/types";
 import WordCard from "../components/WordCard";
+import { CatMark } from "../components/CatLogo";
 
 export default function WordsPage() {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ export default function WordsPage() {
       ) : visible.length === 0 ? (
         <div className="card">
           <p className="empty">
-            <span className="mascot-sm">🐱</span>
+            <CatMark size={44} />
             No words here yet.
           </p>
           <button className="full" onClick={() => navigate("/plan")}>Plan my day</button>

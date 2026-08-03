@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useSession } from "../lib/session";
 import { avatarEmoji } from "../lib/types";
+import { CatMark, CatWordmark } from "./CatLogo";
 
 const TABS = [
   { to: "/", icon: "🏠", label: "Today" },
@@ -19,8 +20,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <span aria-hidden="true">🐱</span>
-          <span className="lf">Cat's<b> Tongue</b></span>
+          <CatMark size={30} />
+          <CatWordmark />
         </div>
         <div className="topbar-right">
           <span className="streak-pill">🔥 {stats?.streak_current ?? 0}</span>

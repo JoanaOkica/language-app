@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🐱 Cat's Tongue
+<img src="docs/screens/logo.png" width="300" alt="Cat's Tongue">
 
 **Learn the words your day actually needs — then say them out loud.**
 
@@ -109,7 +109,10 @@ confirmation*, and explore.
 app/                  React + TypeScript + Vite
   src/pages/          one file per screen
   src/lib/            api (single data-access layer), session, password policy
+  src/components/     CatLogo.tsx — the brand mark, drawn in SVG
+  public/favicon.svg  same mark, also the source for the app icons
   scripts/e2e.cjs     30-check end-to-end pass
+  scripts/make-icons.cjs   renders favicon.svg into the Android launcher icons
   android/            Capacitor project (CI turns this into an APK)
 
 supabase/
@@ -184,6 +187,9 @@ The web app is wrapped with Capacitor and built by CI:
 
 **Actions → Build Android APK → Run workflow** → download the `cats-tongue-apk`
 artifact.
+
+The launcher icon is generated from `public/favicon.svg`; re-run
+`node scripts/make-icons.cjs` if the mark ever changes.
 
 Locally, with the Android SDK installed:
 

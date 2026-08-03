@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Cat's Tongue mark. Matches src/components/CatLogo.tsx. -->
+  <rect width="100" height="100" rx="22" fill="#FDF5EA"/>
+  <g transform="translate(0,2) scale(0.94) translate(3,0)">
+    <path d="M20 40 L24 13 L45 27 Z" fill="#F0862A"/>
+    <path d="M80 40 L76 13 L55 27 Z" fill="#F0862A"/>
+    <path d="M25 36 L27 21 L38 29 Z" fill="#F7A9B8"/>
+    <path d="M75 36 L73 21 L62 29 Z" fill="#F7A9B8"/>
+    <ellipse cx="50" cy="57" rx="34" ry="29" fill="#F79433"/>
+    <ellipse cx="50" cy="68" rx="21" ry="14" fill="#FDBE74"/>
+    <path d="M42 31 q3 6 0 11" stroke="#E0721B" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M50 29 q3 7 0 13" stroke="#E0721B" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M58 31 q3 6 0 11" stroke="#E0721B" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="38" cy="54" rx="4.6" ry="5.6" fill="#3B2A20"/>
+    <circle cx="39.6" cy="52" r="1.7" fill="#fff"/>
+    <path d="M56.5 55 q5.5 -6.5 11 0" stroke="#3B2A20" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="29" cy="64" rx="6" ry="4" fill="#F7A9B8" opacity="0.55"/>
+    <ellipse cx="71" cy="64" rx="6" ry="4" fill="#F7A9B8" opacity="0.55"/>
+    <path d="M46.5 62 L53.5 62 L50 66 Z" fill="#E8677E"/>
+    <path d="M50 66 q-4.5 5 -9 1" stroke="#3B2A20" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M50 66 q4.5 5 9 1" stroke="#3B2A20" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M44 71 q6 12 12 0 Z" fill="#F0637E"/>
+    <path d="M50 72 v5" stroke="#D94A66" stroke-width="1.6" stroke-linecap="round"/>
+    <g stroke="#E0721B" stroke-width="2" stroke-linecap="round">
+      <path d="M22 60 L8 56"/><path d="M22 65 L7 66"/>
+      <path d="M78 60 L92 56"/><path d="M78 65 L93 66"/>
+    </g>
+  </g>
+</svg>

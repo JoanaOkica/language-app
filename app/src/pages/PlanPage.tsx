@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { createTask, generateVocabulary, listVocabulary } from "../lib/api";
 import type { GenerateResult, VocabWord } from "../lib/types";
 import WordCard from "../components/WordCard";
+import { CatMark } from "../components/CatLogo";
 
 const SUGGESTIONS = [
   "Gym in the morning, then groceries",
@@ -75,7 +76,7 @@ export default function PlanPage() {
       {words.length === 0 ? (
         <div className="card">
           <p className="empty">
-            <span className="mascot-sm">🐱</span>
+            <CatMark size={44} />
             Tell FRED your plans above and your word cards will appear here.
           </p>
         </div>
