@@ -1,89 +1,87 @@
 /**
  * Cat's Tongue brand marks.
  *
- * Original artwork drawn to match the brand reference: a cheeky orange tabby,
- * one eye winking, tongue out, carrying a little chat-bubble flag. The wordmark
- * pairs blue "Cat's" with orange "Tongue".
+ * Original artwork matching the brand reference: an outlined ginger tabby,
+ * both eyes open, cream muzzle, forehead stripes and pointed cheek fur.
+ * The wordmark pairs dark "Cat's" with orange "Tongue".
  *
- * Pure SVG so it stays crisp at any size, themes with CSS variables, needs no
- * network request, and can be rendered to PNG for the Android launcher icon.
+ * Pure SVG so it stays crisp at any size, needs no network request, and can be
+ * rendered to PNG for the Android launcher icon (see scripts/make-icons.cjs).
  */
+
+const INK = "#7A3B12";        // outline
+const FUR = "#F79433";
+const FUR_DARK = "#E0721B";   // stripes
+const CREAM = "#FFF3E2";      // muzzle
+const PINK = "#F2A6A0";       // inner ear
+const NOSE = "#E8677E";
+const EYE = "#2E1D12";
 
 interface MarkProps {
   size?: number;
-  /** Show the little flag the cat holds. Off for small/tight placements. */
-  flag?: boolean;
   className?: string;
 }
 
-export function CatMark({ size = 40, flag = false, className }: MarkProps) {
-  // With the flag the canvas widens so the banner sits beside the cat rather
-  // than across its face; without it the mark stays square for favicons/icons.
-  const viewBox = flag ? "0 0 140 100" : "0 0 100 100";
+export function CatMark({ size = 40, className }: MarkProps) {
   return (
     <svg
-      width={flag ? size * 1.4 : size}
+      width={size}
       height={size}
-      viewBox={viewBox}
+      viewBox="0 0 100 100"
       className={className}
       role="img"
       aria-label="Cat's Tongue"
     >
-      {/* ---- ears ---- */}
-      <path d="M20 40 L24 13 L45 27 Z" fill="#F0862A" />
-      <path d="M80 40 L76 13 L55 27 Z" fill="#F0862A" />
-      <path d="M25 36 L27 21 L38 29 Z" fill="#F7A9B8" />
-      <path d="M75 36 L73 21 L62 29 Z" fill="#F7A9B8" />
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
+        {/* ---- ears ---- */}
+        <path d="M23 41 L25 13 L47 26 Z" fill={FUR} />
+        <path d="M77 41 L75 13 L53 26 Z" fill={FUR} />
+        <path d="M29 35 L30 22 L40 28 Z" fill={PINK} strokeWidth="0" />
+        <path d="M71 35 L70 22 L60 28 Z" fill={PINK} strokeWidth="0" />
 
-      {/* ---- head ---- */}
-      <ellipse cx="50" cy="57" rx="34" ry="29" fill="#F79433" />
-      {/* muzzle / chin, a shade lighter */}
-      <ellipse cx="50" cy="68" rx="21" ry="14" fill="#FDBE74" />
+        {/* ---- head, with pointed cheek fur down each side ---- */}
+        <path
+          d="M50 24
+             C 68 24, 81 36, 81 50
+             L 89 54 L 80 59 L 87 65
+             C 82 77, 68 85, 50 85
+             C 32 85, 18 77, 13 65
+             L 20 59 L 11 54 L 19 50
+             C 19 36, 32 24, 50 24 Z"
+          fill={FUR}
+        />
 
-      {/* ---- tabby stripes ---- */}
-      <path d="M42 31 q3 6 0 11" stroke="#E0721B" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-      <path d="M50 29 q3 7 0 13" stroke="#E0721B" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-      <path d="M58 31 q3 6 0 11" stroke="#E0721B" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-
-      {/* ---- eyes: left open, right winking ---- */}
-      <ellipse cx="38" cy="54" rx="4.6" ry="5.6" fill="#3B2A20" />
-      <circle cx="39.6" cy="52" r="1.7" fill="#fff" />
-      <path d="M56.5 55 q5.5 -6.5 11 0" stroke="#3B2A20" strokeWidth="3.2"
-            fill="none" strokeLinecap="round" />
-
-      {/* ---- blush ---- */}
-      <ellipse cx="29" cy="64" rx="6" ry="4" fill="#F7A9B8" opacity="0.55" />
-      <ellipse cx="71" cy="64" rx="6" ry="4" fill="#F7A9B8" opacity="0.55" />
-
-      {/* ---- nose + mouth ---- */}
-      <path d="M46.5 62 L53.5 62 L50 66 Z" fill="#E8677E" />
-      <path d="M50 66 q-4.5 5 -9 1" stroke="#3B2A20" strokeWidth="2.4" fill="none" strokeLinecap="round" />
-      <path d="M50 66 q4.5 5 9 1" stroke="#3B2A20" strokeWidth="2.4" fill="none" strokeLinecap="round" />
-
-      {/* ---- tongue ---- */}
-      <path d="M44 71 q6 12 12 0 Z" fill="#F0637E" />
-      <path d="M50 72 v5" stroke="#D94A66" strokeWidth="1.6" strokeLinecap="round" />
-
-      {/* ---- whiskers ---- */}
-      <g stroke="#E0721B" strokeWidth="2" strokeLinecap="round">
-        <path d="M22 60 L8 56" />
-        <path d="M22 65 L7 66" />
-        <path d="M78 60 L92 56" />
-        <path d="M78 65 L93 66" />
+        {/* ---- cream muzzle + chin ---- */}
+        <ellipse cx="50" cy="66" rx="19" ry="13" fill={CREAM} strokeWidth="0" />
       </g>
 
-      {/* ---- chat-bubble flag, clear of the whiskers (which reach x≈93) ---- */}
-      {flag && (
-        <g>
-          <path d="M104 88 V26" stroke="#C9762F" strokeWidth="3.4" strokeLinecap="round" />
-          <circle cx="104" cy="24" r="3" fill="#C9762F" />
-          <rect x="104" y="30" width="32" height="23" rx="6" fill="#2D62D8" />
-          <path d="M110 53 l0 7 l7 -7 Z" fill="#2D62D8" />
-          <circle cx="113" cy="41.5" r="2.6" fill="#fff" />
-          <circle cx="120" cy="41.5" r="2.6" fill="#fff" />
-          <circle cx="127" cy="41.5" r="2.6" fill="#fff" />
-        </g>
-      )}
+      {/* ---- tabby stripes ---- */}
+      <g stroke={FUR_DARK} strokeWidth="3.4" strokeLinecap="round" fill="none">
+        <path d="M41 33 v9" />
+        <path d="M50 31 v10" />
+        <path d="M59 33 v9" />
+      </g>
+
+      {/* ---- eyes ---- */}
+      <ellipse cx="38" cy="53" rx="5.4" ry="6.2" fill={EYE} />
+      <ellipse cx="62" cy="53" rx="5.4" ry="6.2" fill={EYE} />
+      <circle cx="39.8" cy="50.8" r="1.9" fill="#fff" />
+      <circle cx="63.8" cy="50.8" r="1.9" fill="#fff" />
+
+      {/* ---- nose + smile ---- */}
+      <path d="M46 61 L54 61 L50 65.5 Z" fill={NOSE} />
+      <g stroke={INK} strokeWidth="2.3" fill="none" strokeLinecap="round">
+        <path d="M50 65.5 q-4.5 4.5 -8 1.5" />
+        <path d="M50 65.5 q4.5 4.5 8 1.5" />
+      </g>
+
+      {/* ---- whiskers ---- */}
+      <g stroke={INK} strokeWidth="2" strokeLinecap="round" opacity="0.75">
+        <path d="M28 62 L14 60" />
+        <path d="M28 67 L15 70" />
+        <path d="M72 62 L86 60" />
+        <path d="M72 67 L85 70" />
+      </g>
     </svg>
   );
 }
@@ -98,13 +96,15 @@ export function CatWordmark({ size = 17 }: { size?: number }) {
   );
 }
 
-/** Full lockup: mark, wordmark and tagline — used on the sign-in screen. */
-export function CatLockup() {
+/** Mark above the wordmark — used on the welcome and auth screens. */
+export function CatLockup({ markSize = 88, wordSize = 30 }: {
+  markSize?: number;
+  wordSize?: number;
+}) {
   return (
     <div className="lockup">
-      <CatMark size={96} flag />
-      <CatWordmark size={30} />
-      <p className="tagline">Speak Clearly, Connect Globally</p>
+      <CatMark size={markSize} />
+      <CatWordmark size={wordSize} />
     </div>
   );
 }

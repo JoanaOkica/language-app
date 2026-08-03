@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { auth } from "../lib/api";
 import { useSession } from "../lib/session";
 import { isDemo } from "../lib/supabase";
@@ -9,9 +10,10 @@ import { CatLockup } from "../components/CatLogo";
 
 type Mode = "signin" | "signup" | "forgot";
 
-export default function AuthPage() {
+export default function AuthPage({ initialMode = "signin" }: { initialMode?: Mode }) {
   const { refresh, unconfirmed } = useSession();
-  const [mode, setMode] = useState<Mode>("signin");
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>(initialMode);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -216,6 +218,10 @@ export default function AuthPage() {
               Back to sign in
             </button>
           )}
+          <button type="button" className="link" style={{ color: "var(--ink-soft)" }}
+                  onClick={() => navigate("/")}>
+            ← Back
+          </button>
         </div>
 
         {isDemo && mode === "signin" && (
@@ -233,7 +239,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="center">
       <div className="auth-box">
         <div style={{ marginBottom: 20 }}>
-          <CatLockup />
+          <CatLockup markSize={76} wordSize={26} />
         </div>
         {children}
       </div>

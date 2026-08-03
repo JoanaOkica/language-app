@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { SessionProvider, useSession } from "./lib/session";
 import { isDemo } from "./lib/supabase";
 import Layout from "./components/Layout";
+import WelcomePage from "./pages/WelcomePage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -23,7 +24,18 @@ function Routing() {
   if (window.location.pathname === "/reset-password") return <ResetPasswordPage />;
 
   if (loading) return <div className="center"><p className="spinner">Loading…</p></div>;
-  if (!userId) return <AuthPage />;
+
+  // Signed out: the pitch first, with sign-in and sign-up on their own routes.
+  if (!userId) {
+    return (
+      <Routes>
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/signup" element={<AuthPage initialMode="signup" />} />
+        <Route path="/signin" element={<AuthPage initialMode="signin" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
   if (profile && !profile.onboarded) return <OnboardingPage />;
 
   return (

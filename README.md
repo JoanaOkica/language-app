@@ -8,8 +8,8 @@ Tell the app what you're doing today; it packs the exact vocabulary for it.
 Then practise speaking with **FRED**, an AI coach who scores your pronunciation,
 grammar and fluency.
 
+<img src="docs/screens/00-welcome.png" width="250" alt="Welcome screen">
 <img src="docs/screens/03-today.png" width="250" alt="Today dashboard">
-<img src="docs/screens/06-words.png" width="250" alt="Vocabulary cards">
 <img src="docs/screens/07-fred.png" width="250" alt="FRED speaking coach">
 
 React · TypeScript · Supabase (Postgres + Auth + Storage + Edge Functions) · Capacitor
@@ -40,16 +40,17 @@ both "I speak" and "I'm learning". The only rule is that the two differ.
 
 <table>
 <tr>
+<td align="center" width="33%"><img src="docs/screens/00-welcome.png" width="220"><br><sub><b>Welcome</b><br>What the app does, then the two ways in</sub></td>
 <td align="center" width="33%"><img src="docs/screens/01-signin.png" width="220"><br><sub><b>Sign in</b><br>Generic errors — no account enumeration</sub></td>
 <td align="center" width="33%"><img src="docs/screens/02-onboarding.png" width="220"><br><sub><b>Set up your den</b><br>Avatar, languages, level</sub></td>
-<td align="center" width="33%"><img src="docs/screens/03-today.png" width="220"><br><sub><b>Today</b><br>Daily goal, streak, quick actions</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="docs/screens/03-today.png" width="220"><br><sub><b>Today</b><br>Daily goal, streak, quick actions</sub></td>
 <td align="center"><img src="docs/screens/04-plan.png" width="220"><br><sub><b>Plan</b><br>Describe your day, get words</sub></td>
 <td align="center"><img src="docs/screens/05-plan-repeat.png" width="220"><br><sub><b>Repeat a routine</b><br>Adds nothing, and says so</sub></td>
-<td align="center"><img src="docs/screens/06-words.png" width="220"><br><sub><b>Your words</b><br>One card, many contexts</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="docs/screens/06-words.png" width="220"><br><sub><b>Your words</b><br>One card, many contexts</sub></td>
 <td align="center"><img src="docs/screens/07-fred.png" width="220"><br><sub><b>FRED</b><br>Score + coaching feedback</sub></td>
 <td align="center"><img src="docs/screens/08-games.png" width="220"><br><sub><b>Games</b><br>Built from your vocabulary</sub></td>
 <td align="center"><img src="docs/screens/09-game-builder.png" width="220"><br><sub><b>Sentence Builder</b><br>Tap words into order</sub></td>
@@ -107,7 +108,7 @@ confirmation*, and explore.
 
 ```
 app/                  React + TypeScript + Vite
-  src/pages/          one file per screen
+  src/pages/          one file per screen (WelcomePage is the signed-out landing)
   src/lib/            api (single data-access layer), session, password policy
   src/components/     CatLogo.tsx — the brand mark, drawn in SVG
   public/favicon.svg  same mark, also the source for the app icons

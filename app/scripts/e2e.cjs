@@ -37,7 +37,7 @@ function check(name, condition, detail = '') {
 
   // ---------- 1. SIGN UP VALIDATION ----------
   await page.goto(BASE, { waitUntil: 'networkidle' });
-  await page.click('text=Need an account? Sign up');
+  await page.click('text=Start learning free');   // welcome page -> sign up
   await page.waitForSelector('#confirm');
 
   await page.fill('#email', 'joana@example.com');
@@ -180,9 +180,11 @@ function check(name, condition, detail = '') {
 
   // ---------- 9. SIGN OUT + FORGOT PASSWORD ----------
   await page.click('text=Sign out');
-  await page.waitForSelector('text=Welcome back', { timeout: 8000 });
-  check('Sign out returns to the sign-in screen', true);
+  await page.waitForSelector('text=Start learning free', { timeout: 8000 });
+  check('Sign out returns to the welcome screen', true);
 
+  await page.click('text=I already have an account');
+  await page.waitForSelector('text=Welcome back', { timeout: 8000 });
   await page.click('text=Forgot your password?');
   await page.waitForSelector('text=Reset your password');
   await page.fill('#email', 'joana@example.com');

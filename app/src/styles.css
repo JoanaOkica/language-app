@@ -37,10 +37,28 @@ body {
 
 /* ---------- brand ---------- */
 .wordmark { font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
-.wm-cats { color: var(--blue); }
+.wm-cats { color: var(--ink); }
 .wm-tongue { color: var(--orange); }
 .lockup { text-align: center; display: grid; justify-items: center; gap: 2px; }
 .lockup .tagline { color: var(--blue); font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+/* ---------- welcome / landing ---------- */
+.welcome { max-width: 460px; margin: 0 auto; padding: 26px 18px 30px; min-height: 100vh; }
+.welcome-head { text-align: center; }
+.welcome-tagline { color: var(--ink-soft); font-size: 14.5px; font-weight: 600;
+                   line-height: 1.5; margin: 12px auto 0; max-width: 340px; }
+.welcome-cta { display: grid; gap: 11px; margin: 26px 0 30px; }
+.welcome-cta button { padding: 15px 20px; font-size: 15.5px; }
+
+.features { list-style: none; display: grid; gap: 12px; }
+.feature { background: var(--surface); border-radius: var(--radius); padding: 15px 16px;
+           box-shadow: var(--shadow); display: flex; gap: 13px; align-items: flex-start; }
+.feature-icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.feature h2 { font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+.feature p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.45; }
+
+.welcome-foot { text-align: center; color: var(--orange); font-size: 12.5px;
+                font-weight: 700; margin-top: 26px; }
 
 /* ---------- shell ---------- */
 .shell { max-width: 460px; margin: 0 auto; min-height: 100vh; background: var(--cream); display: flex; flex-direction: column; }
