@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Linguafox</string>
+    <string name="title_activity_main">Linguafox</string>
+    <string name="package_name">com.linguafox.app</string>
+    <string name="custom_url_scheme">com.linguafox.app</string>
+</resources>

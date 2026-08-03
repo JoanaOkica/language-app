@@ -1,54 +1,89 @@
 -- =============================================================================
--- 0003_functions.sql — Server-authoritative game logic & safe read APIs
+-- 0003_functions.sql — Server-authoritative logic and safe read APIs
 --
--- Anything that awards points, advances a streak, unlocks an outfit or scores a
--- challenge lives here as a SECURITY DEFINER function. The `authenticated` role
--- is explicitly denied EXECUTE on the privileged ones, so only Edge Functions
--- (service role) can invoke them. Read helpers that *are* client-callable
--- always re-derive the caller from auth.uid() and never trust an argument.
+-- Anything that awards XP, advances a streak or scores a challenge is a
+-- SECURITY DEFINER function that `authenticated` cannot execute; only Edge
+-- Functions (service_role) may call those. Client-callable helpers always
+-- re-derive the caller from auth.uid() and never accept a user id argument.
+--
+-- Every function pins `search_path = ''` and fully qualifies object names.
 -- =============================================================================
 
--- Outfit unlock thresholds (feature E), kept in one place.
-create or replace function public.outfit_for_streak(p_streak integer)
-returns text
-language sql
-immutable
-security invoker
-set search_path = ''
-as $$
-  select case
-    when p_streak >= 30 then 'legend'
-    when p_streak >= 14 then 'globetrotter'
-    when p_streak >= 7  then 'scholar'
-    when p_streak >= 3  then 'explorer'
-    else null
-  end;
-$$;
-
 -- ---------------------------------------------------------------------------
--- award_points — the ONLY writer of star_points / streaks / mascot unlocks.
--- Idempotent per day for the streak counter: repeated activity on the same
--- day adds points but does not inflate the streak.
+-- ensure_profile — lazy provisioning, called by the client after sign-in.
+--
+-- This replaces the usual `on auth.users` trigger, which would fire for every
+-- signup in this shared Supabase project — including the other apps' users.
+-- Provisioning on first use keeps Linguafox entirely out of their way.
+--
+-- It also enforces the confirmation rule at the data layer: no profile exists
+-- until the address is verified, so an unconfirmed account cannot be used even
+-- if the Auth settings were ever relaxed.
 -- ---------------------------------------------------------------------------
-create or replace function public.award_points(p_user uuid, p_stars integer)
-returns public.user_stats
+create or replace function linguafox.ensure_profile()
+returns linguafox.profiles
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
-  v_stats   public.user_stats;
+  v_uid      uuid := (select auth.uid());
+  v_email    text;
+  v_verified timestamptz;
+  v_profile  linguafox.profiles;
+begin
+  if v_uid is null then
+    raise exception 'not authenticated' using errcode = '28000';
+  end if;
+
+  select u.email, u.email_confirmed_at
+    into v_email, v_verified
+  from auth.users u
+  where u.id = v_uid;
+
+  if v_verified is null then
+    raise exception 'email_not_confirmed' using errcode = '28000';
+  end if;
+
+  insert into linguafox.profiles (id, display_name)
+  values (v_uid, left(coalesce(split_part(v_email, '@', 1), ''), 40))
+  on conflict (id) do nothing;
+
+  insert into linguafox.user_stats (user_id)
+  values (v_uid)
+  on conflict (user_id) do nothing;
+
+  select * into v_profile from linguafox.profiles where id = v_uid;
+  return v_profile;
+end;
+$$;
+
+revoke all on function linguafox.ensure_profile() from public;
+grant execute on function linguafox.ensure_profile() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- award_points — the ONLY writer of star_points and streaks.
+-- Idempotent per day for the streak: extra activity adds XP but does not
+-- inflate the streak counter.
+-- ---------------------------------------------------------------------------
+create or replace function linguafox.award_points(p_user uuid, p_stars integer)
+returns linguafox.user_stats
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_stats   linguafox.user_stats;
   v_today   date := current_date;
   v_current integer;
   v_longest integer;
-  v_outfit  text;
 begin
   if p_stars is null or p_stars < 0 or p_stars > 500 then
     raise exception 'invalid star amount';
   end if;
 
   -- Lock the row so concurrent sessions cannot double-advance the streak.
-  select * into v_stats from public.user_stats where user_id = p_user for update;
+  select * into v_stats from linguafox.user_stats where user_id = p_user for update;
   if not found then
     raise exception 'no stats row for user';
   end if;
@@ -62,19 +97,12 @@ begin
     end if;
   end if;
   v_longest := greatest(v_stats.streak_longest, v_current);
-  v_outfit  := public.outfit_for_streak(v_current);
 
-  update public.user_stats
+  update linguafox.user_stats
      set star_points        = star_points + p_stars,
          streak_current     = v_current,
          streak_longest     = v_longest,
          last_activity_date = v_today,
-         mascot_level       = least(5, 1 + (v_longest / 7)),
-         unlocked_outfits   = case
-                                when v_outfit is not null and not (v_outfit = any(unlocked_outfits))
-                                then unlocked_outfits || v_outfit
-                                else unlocked_outfits
-                              end,
          updated_at         = now()
    where user_id = p_user
    returning * into v_stats;
@@ -83,15 +111,19 @@ begin
 end;
 $$;
 
-revoke all on function public.award_points(uuid, integer) from public, anon, authenticated;
-grant execute on function public.award_points(uuid, integer) to service_role;
+revoke all on function linguafox.award_points(uuid, integer) from public;
+grant execute on function linguafox.award_points(uuid, integer) to service_role;
 
 -- ---------------------------------------------------------------------------
--- consume_daily_quota — atomic AI spend guard. Raises once the cap is reached,
--- which is what stops a single account from running up the API bill.
+-- consume_daily_quota — atomic spend guard, counted PER ACTION KIND.
+--
+-- Each kind ('fred', 'vocab', 'game') has its own counter, so cheap mini-games
+-- cannot exhaust the allowance for the expensive AI calls, and vice versa.
+-- Raising rolls the increment back, so a user at the cap stays at the cap.
 -- ---------------------------------------------------------------------------
-create or replace function public.consume_daily_quota(
+create or replace function linguafox.consume_daily_quota(
   p_user uuid,
+  p_kind text,
   p_limit integer default 30,
   p_tokens integer default 0,
   p_audio_seconds integer default 0
@@ -104,14 +136,18 @@ as $$
 declare
   v_count integer;
 begin
-  insert into public.usage_daily (user_id, day, session_count, tokens_used, audio_seconds)
-  values (p_user, current_date, 1, greatest(p_tokens, 0), greatest(p_audio_seconds, 0))
-  on conflict (user_id, day) do update
-    set session_count = public.usage_daily.session_count + 1,
-        tokens_used   = public.usage_daily.tokens_used + greatest(p_tokens, 0),
-        audio_seconds = public.usage_daily.audio_seconds + greatest(p_audio_seconds, 0),
+  if p_kind not in ('fred', 'vocab', 'game') then
+    raise exception 'unknown quota kind';
+  end if;
+
+  insert into linguafox.usage_daily (user_id, day, kind, action_count, tokens_used, audio_seconds)
+  values (p_user, current_date, p_kind, 1, greatest(p_tokens, 0), greatest(p_audio_seconds, 0))
+  on conflict (user_id, day, kind) do update
+    set action_count  = linguafox.usage_daily.action_count + 1,
+        tokens_used   = linguafox.usage_daily.tokens_used + greatest(p_tokens, 0),
+        audio_seconds = linguafox.usage_daily.audio_seconds + greatest(p_audio_seconds, 0),
         updated_at    = now()
-  returning session_count into v_count;
+  returning action_count into v_count;
 
   if v_count > p_limit then
     raise exception 'daily_quota_exceeded' using errcode = 'P0001';
@@ -120,15 +156,88 @@ begin
 end;
 $$;
 
-revoke all on function public.consume_daily_quota(uuid, integer, integer, integer) from public, anon, authenticated;
-grant execute on function public.consume_daily_quota(uuid, integer, integer, integer) to service_role;
+revoke all on function linguafox.consume_daily_quota(uuid, text, integer, integer, integer) from public;
+grant execute on function linguafox.consume_daily_quota(uuid, text, integer, integer, integer) to service_role;
 
 -- ---------------------------------------------------------------------------
--- record_fred_session — one transaction: persist the session, bill the tokens,
--- award the points, advance any challenge. Called only by the fred-turn Edge
--- Function after it has verified the caller and run the AI pipeline.
+-- add_token_usage — accumulate spend outside a FRED turn.
 -- ---------------------------------------------------------------------------
-create or replace function public.record_fred_session(
+create or replace function linguafox.add_token_usage(p_user uuid, p_kind text, p_tokens integer)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  insert into linguafox.usage_daily (user_id, day, kind, tokens_used)
+  values (p_user, current_date,
+          case when p_kind in ('fred', 'vocab', 'game') then p_kind else 'vocab' end,
+          greatest(coalesce(p_tokens, 0), 0))
+  on conflict (user_id, day, kind) do update
+    set tokens_used = linguafox.usage_daily.tokens_used + greatest(coalesce(p_tokens, 0), 0),
+        updated_at  = now();
+$$;
+
+revoke all on function linguafox.add_token_usage(uuid, text, integer) from public;
+grant execute on function linguafox.add_token_usage(uuid, text, integer) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- progress_challenge — advance a participant's score, settle a winner.
+-- ---------------------------------------------------------------------------
+create or replace function linguafox.progress_challenge(p_challenge uuid, p_user uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  c            linguafox.challenges;
+  v_challenger integer;
+  v_opponent   integer;
+  v_winner     uuid;
+begin
+  -- Tell the column-freeze trigger this is trusted server code.
+  perform set_config('linguafox.server_action', 'on', true);
+
+  select * into c from linguafox.challenges where id = p_challenge for update;
+  if not found or c.status <> 'active' then
+    return;
+  end if;
+  if p_user <> c.challenger_id and p_user <> c.opponent_id then
+    return;                                  -- not a participant: ignore
+  end if;
+
+  v_challenger := c.challenger_score + (case when p_user = c.challenger_id then 1 else 0 end);
+  v_opponent   := c.opponent_score   + (case when p_user = c.opponent_id   then 1 else 0 end);
+
+  if greatest(v_challenger, v_opponent) >= c.target_sessions or now() >= c.expires_at then
+    v_winner := case when v_challenger >= v_opponent then c.challenger_id else c.opponent_id end;
+  end if;
+
+  update linguafox.challenges
+     set challenger_score = v_challenger,
+         opponent_score   = v_opponent,
+         status           = case when v_winner is not null
+                                 then 'completed'::linguafox.challenge_status
+                                 else status end,
+         winner_id        = coalesce(v_winner, winner_id),
+         updated_at       = now()
+   where id = p_challenge;
+
+  if v_winner is not null then
+    perform linguafox.award_points(v_winner, 20);   -- winner's bonus
+  end if;
+
+  perform set_config('linguafox.server_action', 'off', true);
+end;
+$$;
+
+revoke all on function linguafox.progress_challenge(uuid, uuid) from public;
+grant execute on function linguafox.progress_challenge(uuid, uuid) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- record_fred_session — session + tokens + XP + challenge, in one transaction.
+-- ---------------------------------------------------------------------------
+create or replace function linguafox.record_fred_session(
   p_user uuid,
   p_prompt text,
   p_response text,
@@ -148,159 +257,187 @@ declare
   v_session_id uuid;
   v_score smallint := greatest(0, least(100, coalesce(p_score, 0)));
 begin
-  insert into public.fred_sessions (
+  insert into linguafox.fred_sessions (
     user_id, challenge_id, prompt, user_response_text, analysis_text,
     performance_score, score_breakdown, tokens_used, audio_seconds
   ) values (
     p_user, p_challenge_id, p_prompt, p_response, p_analysis,
-    v_score, p_breakdown, greatest(coalesce(p_tokens, 0), 0), greatest(coalesce(p_audio_seconds, 0), 0)
+    v_score, p_breakdown,
+    greatest(coalesce(p_tokens, 0), 0), greatest(coalesce(p_audio_seconds, 0), 0)
   )
   returning id into v_session_id;
 
-  update public.usage_daily
+  update linguafox.usage_daily
      set tokens_used   = tokens_used + greatest(coalesce(p_tokens, 0), 0),
          audio_seconds = audio_seconds + greatest(coalesce(p_audio_seconds, 0), 0),
          updated_at    = now()
-   where user_id = p_user and day = current_date;
+   where user_id = p_user and day = current_date and kind = 'fred';
 
-  perform public.award_points(p_user, (v_score / 10)::integer);
+  perform linguafox.award_points(p_user, (v_score / 10)::integer);
 
   if p_challenge_id is not null then
-    perform public.progress_challenge(p_challenge_id, p_user);
+    perform linguafox.progress_challenge(p_challenge_id, p_user);
   end if;
 
   return v_session_id;
 end;
 $$;
 
-revoke all on function public.record_fred_session(uuid, text, text, text, smallint, jsonb, integer, integer, uuid)
-  from public, anon, authenticated;
-grant execute on function public.record_fred_session(uuid, text, text, text, smallint, jsonb, integer, integer, uuid)
-  to service_role;
+revoke all on function linguafox.record_fred_session(uuid, text, text, text, smallint, jsonb, integer, integer, uuid) from public;
+grant execute on function linguafox.record_fred_session(uuid, text, text, text, smallint, jsonb, integer, integer, uuid) to service_role;
 
 -- ---------------------------------------------------------------------------
--- add_token_usage — accumulate spend outside a FRED turn (e.g. vocabulary
--- generation). Increments rather than overwrites the running daily total.
+-- upsert_vocabulary — the repeated-routine rule, in one transaction.
+--   word unseen                  → create the card + its first sentence
+--   word known, context new      → add a sentence to the existing card
+--   word known, context repeated → do nothing
 -- ---------------------------------------------------------------------------
-create or replace function public.add_token_usage(p_user uuid, p_tokens integer)
-returns void
+create or replace function linguafox.upsert_vocabulary(
+  p_user    uuid,
+  p_task    uuid,
+  p_context text,
+  p_level   linguafox.proficiency_level,
+  p_items   jsonb
+)
+returns table (new_words integer, new_contexts integer, already_known integer)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  item       jsonb;
+  v_word     text;
+  v_vocab_id uuid;
+  v_is_new   boolean;
+  v_added    boolean;
+begin
+  new_words := 0;
+  new_contexts := 0;
+  already_known := 0;
+
+  for item in select value from jsonb_array_elements(coalesce(p_items, '[]'::jsonb))
+  loop
+    v_word := btrim(coalesce(item->>'word', ''));
+    continue when v_word = '' or char_length(v_word) > 80;
+
+    v_vocab_id := null;
+
+    insert into linguafox.vocabulary
+      (user_id, task_id, word, translation, part_of_speech, task_context, level)
+    values
+      (p_user, p_task, v_word,
+       left(coalesce(item->>'translation', ''), 200),
+       nullif(left(coalesce(item->>'part_of_speech', ''), 40), ''),
+       left(coalesce(p_context, 'General'), 120),
+       p_level)
+    on conflict (user_id, lower(word)) do nothing
+    returning id into v_vocab_id;
+
+    v_is_new := v_vocab_id is not null;
+    if not v_is_new then
+      select id into v_vocab_id
+      from linguafox.vocabulary
+      where user_id = p_user and lower(word) = lower(v_word);
+    end if;
+
+    v_added := false;
+    if coalesce(item->>'example_sentence', '') <> '' then
+      insert into linguafox.vocabulary_examples
+        (vocabulary_id, user_id, task_id, context, sentence, sentence_translation)
+      values
+        (v_vocab_id, p_user, p_task,
+         left(coalesce(p_context, 'General'), 120),
+         left(item->>'example_sentence', 400),
+         nullif(left(coalesce(item->>'sentence_translation', ''), 400), ''))
+      on conflict (vocabulary_id, lower(context)) do nothing;
+      v_added := found;
+    end if;
+
+    if v_is_new then
+      new_words := new_words + 1;
+    elsif v_added then
+      new_contexts := new_contexts + 1;
+    else
+      already_known := already_known + 1;
+    end if;
+  end loop;
+
+  return next;
+end;
+$$;
+
+revoke all on function linguafox.upsert_vocabulary(uuid, uuid, text, linguafox.proficiency_level, jsonb) from public;
+grant execute on function linguafox.upsert_vocabulary(uuid, uuid, text, linguafox.proficiency_level, jsonb) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- known_words — recent words sent to the generator so a repeat comes back with
+-- a sentence written for the *new* context. Capped to bound the prompt cost.
+-- ---------------------------------------------------------------------------
+create or replace function linguafox.known_words(p_user uuid)
+returns text[]
 language sql
+stable
 security definer
 set search_path = ''
 as $$
-  insert into public.usage_daily (user_id, day, tokens_used)
-  values (p_user, current_date, greatest(coalesce(p_tokens, 0), 0))
-  on conflict (user_id, day) do update
-    set tokens_used = public.usage_daily.tokens_used + greatest(coalesce(p_tokens, 0), 0),
-        updated_at  = now();
+  select coalesce(array_agg(word), '{}')
+  from (
+    select word from linguafox.vocabulary
+    where user_id = p_user
+    order by created_at desc
+    limit 200
+  ) recent;
 $$;
 
-revoke all on function public.add_token_usage(uuid, integer) from public, anon, authenticated;
-grant execute on function public.add_token_usage(uuid, integer) to service_role;
-
--- ---------------------------------------------------------------------------
--- progress_challenge — increments the caller's side of a challenge and settles
--- a winner when the target is met or the deadline passes (feature G).
--- ---------------------------------------------------------------------------
-create or replace function public.progress_challenge(p_challenge uuid, p_user uuid)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  c public.challenges;
-  v_challenger integer;
-  v_opponent integer;
-  v_winner uuid;
-begin
-  -- Signal to the column-freeze trigger that this is trusted server code.
-  perform set_config('app.server_action', 'on', true);
-
-  select * into c from public.challenges where id = p_challenge for update;
-  if not found or c.status <> 'active' then
-    return;
-  end if;
-  if p_user <> c.challenger_id and p_user <> c.opponent_id then
-    return;                     -- not a participant: silently ignore
-  end if;
-
-  v_challenger := c.challenger_score + (case when p_user = c.challenger_id then 1 else 0 end);
-  v_opponent   := c.opponent_score   + (case when p_user = c.opponent_id   then 1 else 0 end);
-
-  if greatest(v_challenger, v_opponent) >= c.target_sessions or now() >= c.expires_at then
-    v_winner := case when v_challenger >= v_opponent then c.challenger_id else c.opponent_id end;
-  end if;
-
-  update public.challenges
-     set challenger_score = v_challenger,
-         opponent_score   = v_opponent,
-         status           = case when v_winner is not null then 'completed'::public.challenge_status else status end,
-         winner_id        = coalesce(v_winner, winner_id),
-         updated_at       = now()
-   where id = p_challenge;
-
-  if v_winner is not null then
-    perform public.award_points(v_winner, 20);   -- winner's bonus
-  end if;
-
-  perform set_config('app.server_action', 'off', true);
-end;
-$$;
-
-revoke all on function public.progress_challenge(uuid, uuid) from public, anon, authenticated;
+revoke all on function linguafox.known_words(uuid) from public;
+grant execute on function linguafox.known_words(uuid) to service_role;
 
 -- =============================================================================
--- Client-callable helpers. Each one derives the user from auth.uid(); none of
--- them accepts a user id from the caller, so they cannot be pointed at someone
--- else's data.
+-- Client-callable read APIs. Each derives the user from auth.uid(); none takes
+-- a user id, so they cannot be pointed at anyone else's data.
 -- =============================================================================
 
--- Equip an outfit — validated server-side against what is actually unlocked,
--- so a user cannot wear a reward they have not earned.
-create or replace function public.equip_outfit(p_outfit text)
-returns public.user_stats
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_uid uuid := (select auth.uid());
-  v_stats public.user_stats;
-begin
-  if v_uid is null then
-    raise exception 'not authenticated';
-  end if;
-  select * into v_stats from public.user_stats where user_id = v_uid;
-  if not found or not (p_outfit = any(v_stats.unlocked_outfits)) then
-    raise exception 'outfit not unlocked';
-  end if;
-
-  update public.user_stats
-     set equipped_outfit = p_outfit, updated_at = now()
-   where user_id = v_uid
-   returning * into v_stats;
-  return v_stats;
-end;
-$$;
-
-grant execute on function public.equip_outfit(text) to authenticated;
-
--- Profile search. Requires a real query string and returns a hard-capped page,
--- which blunts scraping of the whole user table.
-create or replace function public.search_profiles(p_query text)
+create or replace function linguafox.list_vocabulary(
+  p_sort  text default 'alpha',
+  p_since timestamptz default null
+)
 returns table (
-  id uuid, username citext, display_name text, avatar_url text,
-  star_points integer, streak_current integer, mascot_level integer
+  id uuid, word text, translation text, part_of_speech text,
+  level linguafox.proficiency_level, created_at timestamptz, examples jsonb
 )
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select pp.id, pp.username, pp.display_name, pp.avatar_url,
-         pp.star_points, pp.streak_current, pp.mascot_level
-  from public.public_profiles pp
+  select v.id, v.word, v.translation, v.part_of_speech, v.level, v.created_at,
+         coalesce(
+           (select jsonb_agg(jsonb_build_object(
+                     'context', e.context,
+                     'sentence', e.sentence,
+                     'translation', e.sentence_translation)
+                   order by e.created_at)
+            from linguafox.vocabulary_examples e
+            where e.vocabulary_id = v.id),
+           '[]'::jsonb)
+  from linguafox.vocabulary v
+  where v.user_id = (select auth.uid())
+    and (p_since is null or v.created_at >= p_since)
+  order by
+    case when p_sort = 'alpha'  then lower(v.word) end asc,
+    case when p_sort = 'recent' then v.created_at end desc
+  limit 500;
+$$;
+grant execute on function linguafox.list_vocabulary(text, timestamptz) to authenticated;
+
+-- Prefix-only, minimum two characters, hard row cap: blunts directory scraping.
+create or replace function linguafox.search_profiles(p_query text)
+returns table (id uuid, username text, display_name text, avatar text,
+               star_points integer, streak_current integer)
+language sql stable security definer set search_path = ''
+as $$
+  select pp.id, pp.username, pp.display_name, pp.avatar, pp.star_points, pp.streak_current
+  from linguafox.public_profiles pp
   where (select auth.uid()) is not null
     and char_length(btrim(p_query)) >= 2
     and pp.id <> (select auth.uid())
@@ -308,101 +445,67 @@ as $$
   order by pp.username
   limit 20;
 $$;
+grant execute on function linguafox.search_profiles(text) to authenticated;
 
-grant execute on function public.search_profiles(text) to authenticated;
-
--- Accepted friends, with the public stats needed to render the list.
-create or replace function public.list_friends()
-returns table (
-  id uuid, username citext, display_name text, avatar_url text,
-  star_points integer, streak_current integer, mascot_level integer
-)
-language sql
-stable
-security definer
-set search_path = ''
+create or replace function linguafox.list_friends()
+returns table (id uuid, username text, display_name text, avatar text,
+               star_points integer, streak_current integer)
+language sql stable security definer set search_path = ''
 as $$
-  select pp.id, pp.username, pp.display_name, pp.avatar_url,
-         pp.star_points, pp.streak_current, pp.mascot_level
-  from public.connections c
-  join public.public_profiles pp
+  select pp.id, pp.username, pp.display_name, pp.avatar, pp.star_points, pp.streak_current
+  from linguafox.connections c
+  join linguafox.public_profiles pp
     on pp.id = case when c.requester_id = (select auth.uid()) then c.recipient_id else c.requester_id end
   where c.status = 'accepted'
     and (select auth.uid()) in (c.requester_id, c.recipient_id)
   order by pp.display_name;
 $$;
+grant execute on function linguafox.list_friends() to authenticated;
 
-grant execute on function public.list_friends() to authenticated;
-
--- Friend requests awaiting *my* response.
-create or replace function public.list_pending_requests()
-returns table (
-  connection_id uuid, id uuid, username citext, display_name text,
-  avatar_url text, star_points integer, streak_current integer
-)
-language sql
-stable
-security definer
-set search_path = ''
+create or replace function linguafox.list_pending_requests()
+returns table (connection_id uuid, id uuid, username text, display_name text,
+               avatar text, star_points integer, streak_current integer)
+language sql stable security definer set search_path = ''
 as $$
-  select c.id, pp.id, pp.username, pp.display_name,
-         pp.avatar_url, pp.star_points, pp.streak_current
-  from public.connections c
-  join public.public_profiles pp on pp.id = c.requester_id
-  where c.status = 'pending'
-    and c.recipient_id = (select auth.uid())
+  select c.id, pp.id, pp.username, pp.display_name, pp.avatar, pp.star_points, pp.streak_current
+  from linguafox.connections c
+  join linguafox.public_profiles pp on pp.id = c.requester_id
+  where c.status = 'pending' and c.recipient_id = (select auth.uid())
   order by c.created_at desc;
 $$;
+grant execute on function linguafox.list_pending_requests() to authenticated;
 
-grant execute on function public.list_pending_requests() to authenticated;
-
--- Challenges I am part of, with the opponent's display info resolved.
-create or replace function public.list_my_challenges()
-returns table (
-  id uuid, kind text, status public.challenge_status, target_sessions smallint,
-  my_score integer, their_score integer, winner_id uuid,
-  opponent_id uuid, opponent_name text, opponent_avatar text,
-  i_am_opponent boolean, expires_at timestamptz
-)
-language sql
-stable
-security definer
-set search_path = ''
+create or replace function linguafox.list_my_challenges()
+returns table (id uuid, kind text, status linguafox.challenge_status, target_sessions smallint,
+               my_score integer, their_score integer, winner_id uuid,
+               opponent_id uuid, opponent_name text, opponent_avatar text,
+               i_am_opponent boolean, expires_at timestamptz)
+language sql stable security definer set search_path = ''
 as $$
   select c.id, c.kind, c.status, c.target_sessions,
          case when c.challenger_id = (select auth.uid()) then c.challenger_score else c.opponent_score end,
          case when c.challenger_id = (select auth.uid()) then c.opponent_score else c.challenger_score end,
-         c.winner_id,
-         pp.id, pp.display_name, pp.avatar_url,
-         (c.opponent_id = (select auth.uid())),
-         c.expires_at
-  from public.challenges c
-  join public.public_profiles pp
+         c.winner_id, pp.id, pp.display_name, pp.avatar,
+         (c.opponent_id = (select auth.uid())), c.expires_at
+  from linguafox.challenges c
+  join linguafox.public_profiles pp
     on pp.id = case when c.challenger_id = (select auth.uid()) then c.opponent_id else c.challenger_id end
   where (select auth.uid()) in (c.challenger_id, c.opponent_id)
   order by c.created_at desc;
 $$;
+grant execute on function linguafox.list_my_challenges() to authenticated;
 
-grant execute on function public.list_my_challenges() to authenticated;
-
--- Friends-and-me leaderboard (feature F/G).
-create or replace function public.friends_leaderboard()
-returns table (
-  id uuid, display_name text, avatar_url text,
-  star_points integer, streak_current integer, is_me boolean
-)
-language sql
-stable
-security definer
-set search_path = ''
+create or replace function linguafox.friends_leaderboard()
+returns table (id uuid, display_name text, avatar text,
+               star_points integer, streak_current integer, is_me boolean)
+language sql stable security definer set search_path = ''
 as $$
-  select pp.id, pp.display_name, pp.avatar_url, pp.star_points, pp.streak_current,
+  select pp.id, pp.display_name, pp.avatar, pp.star_points, pp.streak_current,
          (pp.id = (select auth.uid()))
-  from public.public_profiles pp
+  from linguafox.public_profiles pp
   where pp.id = (select auth.uid())
-     or public.are_friends((select auth.uid()), pp.id)
+     or linguafox.are_friends((select auth.uid()), pp.id)
   order by pp.star_points desc
   limit 50;
 $$;
-
-grant execute on function public.friends_leaderboard() to authenticated;
+grant execute on function linguafox.friends_leaderboard() to authenticated;

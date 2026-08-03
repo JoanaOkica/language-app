@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
 
   const { error: quotaError } = await asService.rpc("consume_daily_quota", {
     p_user: userId,
+    p_kind: "game",
     p_limit: MAX_GAMES_PER_DAY,
   });
   if (quotaError) {

@@ -3,6 +3,16 @@
 Captured from the running React app (`app/`) in demo mode at 460 px width.
 Warm cream + orange theme, five-tab navigation, customisable avatars.
 
+### Account lifecycle
+
+| | |
+|---|---|
+| **Sign-up validation**<br>Weak password blocked, with one fix at a time.<br><img src="screens/a1-signup-weak.png" width="330"> | **Confirm password**<br>Mismatch blocks submission.<br><img src="screens/a2-signup-mismatch.png" width="330"> |
+| **Strong password accepted**<br>Meter turns green and submit unlocks.<br><img src="screens/a3-signup-strong.png" width="330"> | **Confirmation gate**<br>No session until the email is verified; 24-hour expiry stated.<br><img src="screens/a4-confirm-gate.png" width="330"> |
+| **Forgot password**<br>Neutral wording — never reveals whether an account exists.<br><img src="screens/a7-forgot-password.png" width="330"> | **Reset password**<br>Same policy as sign-up, typed twice.<br><img src="screens/a8-reset-password.png" width="330"> |
+
+### The app
+
 | | |
 |---|---|
 | **1. Sign in**<br>Generic failure message so accounts cannot be enumerated.<br><img src="screens/01-signin.png" width="330"> | **2. Set up your den**<br>Avatar picker, language chips, and plain-English levels.<br><img src="screens/02-onboarding.png" width="330"> |

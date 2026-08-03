@@ -3,6 +3,7 @@ import { SessionProvider, useSession } from "./lib/session";
 import { isDemo } from "./lib/supabase";
 import Layout from "./components/Layout";
 import AuthPage from "./pages/AuthPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import TodayPage from "./pages/TodayPage";
 import PlanPage from "./pages/PlanPage";
@@ -16,6 +17,10 @@ import DenPage from "./pages/DenPage";
 
 function Routing() {
   const { userId, profile, loading } = useSession();
+
+  // The recovery link must work while signed out, so this route is resolved
+  // before the auth gate.
+  if (window.location.pathname === "/reset-password") return <ResetPasswordPage />;
 
   if (loading) return <div className="center"><p className="spinner">Loading…</p></div>;
   if (!userId) return <AuthPage />;

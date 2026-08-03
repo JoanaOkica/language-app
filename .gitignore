@@ -24,3 +24,14 @@ supabase/.temp/
 
 # TS incremental build cache
 *.tsbuildinfo
+
+# Android build output (the project itself IS committed so CI can build it)
+app/android/.gradle/
+app/android/build/
+app/android/app/build/
+app/android/local.properties
+app/android/.idea/
+app/android/app/src/main/assets/public/
+*.apk
+*.keystore
+app/scripts/e2e-results.json

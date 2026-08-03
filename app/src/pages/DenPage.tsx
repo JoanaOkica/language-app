@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { auth, deleteAccount, updateProfile } from "../lib/api";
 import { useSession } from "../lib/session";
+import { isDemo } from "../lib/supabase";
 import {
   AVATARS, LANGUAGES, LEVELS, avatarEmoji, langCode, leagueFor,
 } from "../lib/types";
@@ -20,6 +21,7 @@ export default function DenPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmText, setConfirmText] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -52,7 +54,7 @@ export default function DenPage() {
     setDeleting(true);
     setError(null);
     try {
-      await deleteAccount();
+      await deleteAccount(confirmPassword);
       await refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -174,12 +176,22 @@ export default function DenPage() {
             <label htmlFor="confirm">Type <strong>DELETE</strong> to confirm</label>
             <input id="confirm" value={confirmText} autoComplete="off"
                    onChange={(e) => setConfirmText(e.target.value)} placeholder="DELETE" />
+
+            <label htmlFor="delpw">Your current password</label>
+            <input id="delpw" type="password" autoComplete="current-password"
+                   value={confirmPassword}
+                   onChange={(e) => setConfirmPassword(e.target.value)} />
+            <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>
+              Required so a stolen session can't delete your account.
+            </p>
+
             <div className="btn-row">
               <button className="grow outline"
-                      onClick={() => { setConfirming(false); setConfirmText(""); }}>
+                      onClick={() => { setConfirming(false); setConfirmText(""); setConfirmPassword(""); }}>
                 Cancel
               </button>
-              <button className="grow danger" disabled={confirmText !== "DELETE" || deleting}
+              <button className="grow danger"
+                      disabled={confirmText !== "DELETE" || (!isDemo && !confirmPassword) || deleting}
                       onClick={() => void reallyDelete()}>
                 {deleting ? "Deleting…" : "Delete forever"}
               </button>

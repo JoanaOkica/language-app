@@ -11,6 +11,11 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+/** Every table, view and RPC lives here — never in `public`. */
+export const SCHEMA = "linguafox";
+export const BUCKET_SPEECH = "linguafox-speech";
+export const BUCKET_AVATARS = "linguafox-avatars";
+
 export interface Caller {
   userId: string;
   /** Acts as the user; every query is still filtered by RLS. */
@@ -28,6 +33,9 @@ export async function requireUser(req: Request): Promise<Caller> {
   }
 
   const asUser = createClient(SUPABASE_URL, ANON_KEY, {
+    // The app owns a dedicated schema so it cannot collide with the other
+    // projects sharing this Supabase instance.
+    db: { schema: SCHEMA },
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -39,6 +47,7 @@ export async function requireUser(req: Request): Promise<Caller> {
   }
 
   const asService = createClient(SUPABASE_URL, SERVICE_KEY, {
+    db: { schema: SCHEMA },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 

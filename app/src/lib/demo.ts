@@ -96,7 +96,9 @@ const FALLBACK: Array<[string, string, string, string, string]> = [
 
 export const demo = {
   async signIn() { await wait(); state.signedIn = true; return copy(state.profile); },
-  async signUp() { await wait(); state.signedIn = true; state.profile.onboarded = false; return copy(state.profile); },
+  /** Mirrors real signup: no session until the address is confirmed. */
+  async signUp() { await wait(); state.signedIn = false; state.profile.onboarded = false; return copy(state.profile); },
+  async confirmEmail() { await wait(200); state.signedIn = true; },
   async signOut() { state.signedIn = false; },
   session: () => (state.signedIn ? { userId: ME } : null),
 

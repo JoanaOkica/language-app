@@ -10,9 +10,17 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
  */
 export const isDemo = !url || !anonKey;
 
+/**
+ * Every Linguafox object lives in its own Postgres schema, so this project can
+ * share a Supabase instance with other apps without colliding with them.
+ */
+export const SCHEMA = "linguafox";
+export const BUCKET_SPEECH = "linguafox-speech";
+
 export const supabase = isDemo
   ? null
   : createClient(url!, anonKey!, {
+      db: { schema: SCHEMA },
       auth: {
         // Tokens live in localStorage and are auto-refreshed. `detectSessionInUrl`
         // handles the OAuth/magic-link redirect hand-off.
@@ -35,3 +43,9 @@ export const FUNCTIONS = {
   awardGamePoints: "award-game-points",
   deleteAccount: "delete-account",
 } as const;
+
+/**
+ * Tags the account as ours in `raw_user_meta_data`. The unconfirmed-signup
+ * purge is scoped by this, so it can never delete another app's pending users.
+ */
+export const APP_TAG = "linguafox";

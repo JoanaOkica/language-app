@@ -6,7 +6,7 @@
  * no project is configured. Pages never import the Supabase client directly,
  * so authorisation logic stays in one auditable place.
  */
-import { db, isDemo, FUNCTIONS } from "./supabase";
+import { db, isDemo, FUNCTIONS, APP_TAG, BUCKET_SPEECH } from "./supabase";
 import { demo } from "./demo";
 import type {
   Challenge, FredSession, FredTurnResult, FriendRequest, GenerateResult,
@@ -31,10 +31,59 @@ export const auth = {
     if (error) throw new Error(error.message);
   },
 
+  /**
+   * Creates the account and sends the confirmation email. With confirmations
+   * enabled Supabase returns no session, so the user cannot get in until they
+   * click the link — and an unconfirmed account is purged after 24 hours.
+   *
+   * The `app` tag scopes that purge to Linguafox signups only, so it can never
+   * touch accounts created by the other projects sharing this Supabase instance.
+   */
   async signUp(email: string, password: string): Promise<void> {
     if (isDemo) { await demo.signUp(); return; }
-    const { error } = await db().auth.signUp({ email, password });
+    const { error } = await db().auth.signUp({
+      email,
+      password,
+      options: {
+        data: { app: APP_TAG },
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    });
     if (error) throw new Error(error.message);
+  },
+
+  /** Re-sends the confirmation email if the first one was lost. */
+  async resendConfirmation(email: string): Promise<void> {
+    if (isDemo) return;
+    const { error } = await db().auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    if (error) throw new Error(error.message);
+  },
+
+  /** Starts the forgotten-password flow. */
+  async requestPasswordReset(email: string): Promise<void> {
+    if (isDemo) return;
+    const { error } = await db().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw new Error(error.message);
+  },
+
+  /** Completes a reset: only works while the recovery link's session is active. */
+  async updatePassword(password: string): Promise<void> {
+    if (isDemo) return;
+    const { error } = await db().auth.updateUser({ password });
+    if (error) throw new Error(error.message);
+  },
+
+  /** True once the signed-in user's address has been verified. */
+  async isEmailConfirmed(): Promise<boolean> {
+    if (isDemo) return true;
+    const { data } = await db().auth.getUser();
+    return Boolean(data.user?.email_confirmed_at);
   },
 
   async signOut(): Promise<void> {
@@ -50,6 +99,25 @@ export const auth = {
 };
 
 /* ------------------------------ profile ------------------------------ */
+
+/**
+ * Creates the profile and stats rows on first use, replacing the usual
+ * `on auth.users` trigger — which would fire for every signup in this shared
+ * project, including the other apps'. The function refuses if the address is
+ * unconfirmed, so confirmation is enforced in the database too, not just by
+ * the Auth settings.
+ */
+export async function ensureProfile(): Promise<Profile | null> {
+  if (isDemo) return demo.getProfile();
+  const { data, error } = await db().rpc("ensure_profile");
+  if (error) {
+    if (error.message?.includes("email_not_confirmed")) {
+      throw new Error("email_not_confirmed");
+    }
+    throw new Error(error.message);
+  }
+  return data as Profile;
+}
 
 export async function getProfile(): Promise<Profile | null> {
   if (isDemo) return demo.getProfile();
@@ -82,11 +150,20 @@ export async function updateProfile(patch: Partial<Profile>): Promise<Profile> {
 /**
  * Permanent account deletion. Runs server-side so storage objects are purged
  * before the auth user is removed and the cascade wipes every table.
+ * The current password is required: a stolen session alone must not be able to
+ * destroy an account.
  */
-export async function deleteAccount(): Promise<void> {
+export async function deleteAccount(password: string): Promise<void> {
   if (isDemo) { await demo.deleteAccount(); return; }
-  const { error } = await db().functions.invoke(FUNCTIONS.deleteAccount, { body: {} });
-  if (error) throw new Error(await readFunctionError(error));
+  const { error } = await db().functions.invoke(FUNCTIONS.deleteAccount, {
+    body: { password },
+  });
+  if (error) {
+    const message = await readFunctionError(error);
+    throw new Error(message === "password incorrect"
+      ? "That password isn't correct."
+      : message);
+  }
   await db().auth.signOut();
 }
 
@@ -168,7 +245,7 @@ export async function submitFredTurn(
 
   const audioPath = `${uid}/${crypto.randomUUID()}.webm`;
   const { error: upErr } = await db().storage
-    .from("speech")
+    .from(BUCKET_SPEECH)
     .upload(audioPath, audio, { contentType: "audio/webm", upsert: false });
   if (upErr) throw new Error(upErr.message);
 

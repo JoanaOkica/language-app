@@ -1,0 +1,70 @@
+name: Build Android APK
+
+# Produces an installable APK as a downloadable artifact.
+# Run it from the Actions tab ("Run workflow"), or on any push to the branch.
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Build variant"
+        type: choice
+        options: [debug, release]
+        default: debug
+  push:
+    branches: [main]
+    paths: ["app/**", ".github/workflows/android.yml"]
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write client configuration
+        # The anon key is public by design — RLS is what protects the data —
+        # but it still lives in repository secrets rather than in git.
+        # The service-role key must NEVER appear here: anything VITE_-prefixed
+        # is bundled into the app and readable by anyone who installs it.
+        run: |
+          cat > .env <<EOF
+          VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          EOF
+
+      - name: Build the web bundle
+        run: npm run build
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up the Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Assemble APK
+        run: ./gradlew assemble${{ github.event.inputs.variant == 'release' && 'Release' || 'Debug' }} --no-daemon
+        working-directory: app/android
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: linguafox-apk
+          path: app/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error

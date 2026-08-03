@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
 
   const { error: quotaError } = await asService.rpc("consume_daily_quota", {
     p_user: userId,
+    p_kind: "vocab",
     p_limit: DAILY_GENERATION_LIMIT,
   });
   if (quotaError) {
@@ -97,7 +98,7 @@ Deno.serve(async (req) => {
     }
 
     await asUser.from("tasks").update({ status: "generated" }).eq("id", taskId);
-    await asService.rpc("add_token_usage", { p_user: userId, p_tokens: tokens });
+    await asService.rpc("add_token_usage", { p_user: userId, p_kind: "vocab", p_tokens: tokens });
 
     const counts = Array.isArray(result) ? result[0] : result;
     return json(req, {

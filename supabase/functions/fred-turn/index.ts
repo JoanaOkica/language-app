@@ -7,7 +7,7 @@
  * sees the AI key and cannot influence its own score.
  */
 import { preflight, json, fail } from "../_shared/http.ts";
-import { requireUser, AuthError } from "../_shared/auth.ts";
+import { requireUser, AuthError, BUCKET_SPEECH } from "../_shared/auth.ts";
 import { transcribeAudio, analyseSpeech } from "../_shared/ai.ts";
 
 const DAILY_SESSION_LIMIT = Number(Deno.env.get("DAILY_SESSION_LIMIT") ?? "30");
@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
   // ---- Spend guard ------------------------------------------------------
   const { error: quotaError } = await asService.rpc("consume_daily_quota", {
     p_user: userId,
+    p_kind: "fred",
     p_limit: DAILY_SESSION_LIMIT,
   });
   if (quotaError) {
@@ -67,14 +68,14 @@ Deno.serve(async (req) => {
       .single();
 
     // ---- Fetch audio and run the AI pipeline ----------------------------
-    const { data: audio, error: dlError } = await asService.storage.from("speech").download(audioPath);
+    const { data: audio, error: dlError } = await asService.storage.from(BUCKET_SPEECH).download(audioPath);
     if (dlError || !audio) return fail(req, 404, "audio_not_found", dlError);
 
     const transcript = await transcribeAudio(audio);
     const analysis = await analyseSpeech({
       transcript,
       prompt,
-      level: profile?.level ?? "A1",
+      level: profile?.level ?? "beginner",
       targetLanguage: profile?.target_language ?? "Spanish",
     });
 
@@ -93,7 +94,7 @@ Deno.serve(async (req) => {
     if (rpcError) return fail(req, 500, "persist_failed", rpcError);
 
     // ---- Raw audio is disposable: delete it once transcribed ------------
-    await asService.storage.from("speech").remove([audioPath]);
+    await asService.storage.from(BUCKET_SPEECH).remove([audioPath]);
 
     return json(req, {
       sessionId,
