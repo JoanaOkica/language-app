@@ -4,14 +4,15 @@ import { isDemo } from "./lib/supabase";
 import Layout from "./components/Layout";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
-import HomePage from "./pages/HomePage";
-import TasksPage from "./pages/TasksPage";
-import LibraryPage from "./pages/LibraryPage";
+import TodayPage from "./pages/TodayPage";
+import PlanPage from "./pages/PlanPage";
+import WordsPage from "./pages/WordsPage";
 import FredPage from "./pages/FredPage";
-import MascotPage from "./pages/MascotPage";
+import GamesPage from "./pages/GamesPage";
+import GamePlayPage from "./pages/GamePlayPage";
 import FriendsPage from "./pages/FriendsPage";
 import ChallengesPage from "./pages/ChallengesPage";
-import SettingsPage from "./pages/SettingsPage";
+import DenPage from "./pages/DenPage";
 
 function Routing() {
   const { userId, profile, loading } = useSession();
@@ -23,14 +24,16 @@ function Routing() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/tasks" element={<TasksPage />} />
-        <Route path="/library" element={<LibraryPage />} />
-        <Route path="/fred" element={<FredPage />} />
-        <Route path="/mascot" element={<MascotPage />} />
+        <Route path="/" element={<TodayPage />} />
+        <Route path="/plan" element={<PlanPage />} />
+        <Route path="/words" element={<WordsPage />} />
+        {/* "Talk" is FRED — the speaking coach is unchanged. */}
+        <Route path="/talk" element={<FredPage />} />
+        <Route path="/games" element={<GamesPage />} />
+        <Route path="/games/:gameId" element={<GamePlayPage />} />
         <Route path="/friends" element={<FriendsPage />} />
         <Route path="/challenges" element={<ChallengesPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/den" element={<DenPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
@@ -41,9 +44,7 @@ export default function App() {
   return (
     <SessionProvider>
       {isDemo && (
-        <div className="banner">
-          Demo mode — no Supabase project configured. Data is in-memory only.
-        </div>
+        <div className="banner">Demo mode — in-memory data, no Supabase project configured.</div>
       )}
       <Routing />
     </SessionProvider>

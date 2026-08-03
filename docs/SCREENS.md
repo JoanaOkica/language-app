@@ -1,31 +1,47 @@
 # App Screens
 
-Captured from the running React app (`app/`) in demo mode, at a 460 px mobile
-width. Styling is intentionally restrained for this phase — the focus is
-structure, flow and security.
+Captured from the running React app (`app/`) in demo mode at 460 px width.
+Warm cream + orange theme, five-tab navigation, customisable avatars.
 
 | | |
 |---|---|
-| **1. Sign in / Sign up**<br>Generic failure message so accounts cannot be enumerated.<br><img src="screens/01-signin.png" width="330"> | **2. Onboarding**<br>Username, languages and CEFR level — these drive AI difficulty.<br><img src="screens/02-onboarding.png" width="330"> |
-| **3. Home**<br>Streak, Star Points, today's actions, mascot and friends leaderboard.<br><img src="screens/03-home.png" width="330"> | **4. Vocabulary task**<br>Describe an activity; the server generates level-appropriate words.<br><img src="screens/04-task-generated.png" width="330"> |
-| **5. Library**<br>Alphabetical by default; sort by date added, filter by range, search.<br><img src="screens/05-library.png" width="330"> | **6. FRED**<br>Record, transcribe, score. Breakdown across pronunciation, grammar, fluency.<br><img src="screens/06-fred.png" width="330"> |
-| **7. Gazelle mascot**<br>Outfits unlock from streak thresholds, validated server-side.<br><img src="screens/07-mascot.png" width="330"> | **8. Friends**<br>Search by username, accept requests, see friends' public stats.<br><img src="screens/08-friends.png" width="330"> |
-| **9. Compete**<br>FRED sprint against a friend; scores are written by the server.<br><img src="screens/09-challenge.png" width="330"> | **10. Settings**<br>Profile, level, and the privacy toggle that hides you from search.<br><img src="screens/10-settings.png" width="330"> |
+| **1. Sign in**<br>Generic failure message so accounts cannot be enumerated.<br><img src="screens/01-signin.png" width="330"> | **2. Set up your den**<br>Avatar picker, language chips, and plain-English levels.<br><img src="screens/02-onboarding.png" width="330"> |
+| **3. Today**<br>Daily XP goal, week strip, four action tiles, today's words, league.<br><img src="screens/03-today.png" width="330"> | **4. Plan**<br>Describe your day → FRED packs the words you'll need.<br><img src="screens/04-plan.png" width="330"> |
+| **5. Repeated routine**<br>Same day described twice adds nothing — and says so.<br><img src="screens/05-plan-repeat.png" width="330"> | **6. Your words**<br>One card per word; "café" carries 3 contexts, not 3 duplicates.<br><img src="screens/06-words.png" width="330"> |
+| **7. Talk — FRED**<br>Unchanged speaking coach: record, transcribe, score.<br><img src="screens/07-fred.png" width="330"> | **8. Games**<br>Four mini-games built from the learner's own vocabulary.<br><img src="screens/08-games.png" width="330"> |
+| **9. Sentence Builder**<br>Tap the words into the right order.<br><img src="screens/09-game-builder.png" width="330"> | **10. Friends**<br>Search by username, accept requests, compare streaks.<br><img src="screens/10-friends.png" width="330"> |
+| **11. Challenges**<br>FRED sprints against a friend, scored server-side.<br><img src="screens/11-challenges.png" width="330"> | **12. Your den**<br>Avatar, languages, level, privacy — and account deletion.<br><img src="screens/12-den.png" width="330"> |
+| **13. Delete account**<br>Type-to-confirm before permanent erasure.<br><img src="screens/13-delete-account.png" width="330"> | |
+
+## Navigation
+
+Five tabs, matching the reference design:
+
+| Tab | Route | Purpose |
+|-----|-------|---------|
+| Today | `/` | Dashboard: goal, streak, tiles, today's words |
+| Plan | `/plan` | Describe your day, get vocabulary |
+| Talk | `/talk` | FRED, the speaking coach |
+| Games | `/games` | Word Match · Quick Quiz · Echo Fox · Sentence Builder |
+| Friends | `/friends` | Social graph and leaderboard |
+
+`/words`, `/challenges` and `/den` are reached from the Today tiles, the
+"See all" link, and the avatar button in the header.
 
 ## Flow
 
 ```mermaid
 flowchart LR
-    A[Sign in] --> B[Onboarding]
-    B --> C[Home]
-    C --> D[New task]
-    D --> E[Library]
-    C --> F[FRED]
-    F -->|score| C
-    C --> G[Mascot]
-    C --> H[Friends]
-    H --> I[Compete]
-    I -->|session| F
+    A[Sign in] --> B[Set up den]
+    B --> C[Today]
+    C --> D[Plan]
+    D -->|words| E[Your words]
+    C --> F[Talk / FRED]
+    C --> G[Games]
+    C --> H[Challenges]
+    C --> I[Friends]
+    H -->|sprint| F
+    G -->|XP| C
 ```
 
 ## Reproducing these
@@ -34,7 +50,5 @@ flowchart LR
 cd app && npm install && npm run dev
 ```
 
-With no `.env` present the app starts in **demo mode** against an in-memory
-store, so every screen is reachable without a Supabase project. Add
-`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to run against the real
-backend.
+With no `.env` the app runs in demo mode against an in-memory store, so every
+screen is reachable without a Supabase project.

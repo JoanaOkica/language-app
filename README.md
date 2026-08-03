@@ -4,18 +4,18 @@ Learn the words your day actually needs, then practise saying them out loud with
 **FRED**, an AI speaking coach.
 
 Built on **Supabase** (Postgres + Auth + Storage + Edge Functions) with a
-**React + TypeScript** client. This phase covers core functionality,
-architecture and security; visual design is deliberately restrained.
+**React + TypeScript** client — warm cream-and-orange theme, five-tab
+navigation, customisable avatars.
 
 ## Features
 
 | | Feature | Status |
 |---|---------|--------|
 | A | **Task-based vocabulary** — describe an activity, get a level-appropriate word & sentence list | ✅ |
-| B | **Vocabulary library** — alphabetical by default, filter by date added, search | ✅ |
+| B | **Vocabulary library** — one card per word with every context it appears in; alphabetical by default, filter by date, search | ✅ |
 | C | **FRED** — record speech, get transcription, coaching feedback and a score | ✅ |
-| D | **Gamification** — streaks and Star Points, server-authoritative | ✅ |
-| E | **Gazelle mascot** — outfits unlock from streak thresholds | ✅ |
+| D | **Gamification** — streaks, XP and four mini-games, server-authoritative | ✅ |
+| E | **Avatars & leagues** — ten avatars to choose from, XP leagues Kit → Elder | ✅ |
 | F | **Profiles & friends** — search, friend requests, public profiles, leaderboard | ✅ |
 | G | **Friendly competition** — FRED sprint challenges between friends | ✅ |
 

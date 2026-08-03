@@ -9,8 +9,8 @@
 import { db, isDemo, FUNCTIONS } from "./supabase";
 import { demo } from "./demo";
 import type {
-  Challenge, FredSession, FredTurnResult, FriendRequest, LeaderboardRow,
-  Profile, PublicProfile, Task, UserStats, VocabWord,
+  Challenge, FredSession, FredTurnResult, FriendRequest, GenerateResult,
+  LeaderboardRow, Profile, PublicProfile, Task, UserStats, VocabWord,
 } from "./types";
 
 export type VocabSort = "alpha" | "recent";
@@ -73,16 +73,21 @@ export async function updateProfile(patch: Partial<Profile>): Promise<Profile> {
   if (isDemo) return demo.updateProfile(patch);
   const uid = await auth.currentUserId();
   if (!uid) throw new Error("Not signed in");
-  // Only profile-owned fields are sent; stats columns live in another table
-  // the client has no write grant on.
   const { data, error } = await db()
-    .from("profiles")
-    .update(patch)
-    .eq("id", uid)
-    .select()
-    .single();
+    .from("profiles").update(patch).eq("id", uid).select().single();
   if (error) throw new Error(error.message);
   return data as Profile;
+}
+
+/**
+ * Permanent account deletion. Runs server-side so storage objects are purged
+ * before the auth user is removed and the cascade wipes every table.
+ */
+export async function deleteAccount(): Promise<void> {
+  if (isDemo) { await demo.deleteAccount(); return; }
+  const { error } = await db().functions.invoke(FUNCTIONS.deleteAccount, { body: {} });
+  if (error) throw new Error(await readFunctionError(error));
+  await db().auth.signOut();
 }
 
 /* ------------------------- tasks & vocabulary ------------------------- */
@@ -103,21 +108,28 @@ export async function createTask(title: string): Promise<Task> {
   const profile = await getProfile();
   const { data, error } = await db()
     .from("tasks")
-    .insert({ user_id: uid, title, level: profile?.level ?? "A1" })
+    .insert({ user_id: uid, title, level: profile?.level ?? "beginner" })
     .select("id, title, status, created_at")
     .single();
   if (error) throw new Error(error.message);
   return data as Task;
 }
 
-/** Runs on the server: the AI key and the token budget never touch the client. */
-export async function generateVocabulary(taskId: string, title: string): Promise<VocabWord[]> {
+/**
+ * Server-side generation. Returns how the result was applied: brand-new cards,
+ * new contexts added to words already known, and repeats that changed nothing.
+ */
+export async function generateVocabulary(taskId: string, title: string): Promise<GenerateResult> {
   if (isDemo) return demo.generateVocabulary(taskId, title);
   const { data, error } = await db().functions.invoke(FUNCTIONS.generateVocabulary, {
     body: { taskId },
   });
   if (error) throw new Error(await readFunctionError(error));
-  return (data?.items ?? []) as VocabWord[];
+  return {
+    newWords: data?.newWords ?? 0,
+    newContexts: data?.newContexts ?? 0,
+    alreadyKnown: data?.alreadyKnown ?? 0,
+  };
 }
 
 export async function listVocabulary(
@@ -128,15 +140,12 @@ export async function listVocabulary(
     const all = await demo.listVocabulary();
     return sortAndFilter(all, sort, range);
   }
-  let query = db().from("vocabulary").select("*");
-  const since = rangeStart(range);
-  if (since) query = query.gte("created_at", since);
-  query = sort === "alpha"
-    ? query.order("word", { ascending: true })
-    : query.order("created_at", { ascending: false });
-  const { data, error } = await query.limit(500);
+  const { data, error } = await db().rpc("list_vocabulary", {
+    p_sort: sort,
+    p_since: rangeStart(range),
+  });
   if (error) throw new Error(error.message);
-  return data as VocabWord[];
+  return (data ?? []) as VocabWord[];
 }
 
 export async function deleteWord(id: string): Promise<void> {
@@ -147,10 +156,6 @@ export async function deleteWord(id: string): Promise<void> {
 
 /* -------------------------------- FRED -------------------------------- */
 
-/**
- * Uploads the recording to the caller's own storage folder, then asks the
- * Edge Function to transcribe, analyse and score it.
- */
 export async function submitFredTurn(
   audio: Blob,
   prompt: string,
@@ -183,14 +188,31 @@ export async function listSessions(): Promise<FredSession[]> {
   return data as FredSession[];
 }
 
-/* ------------------------------- mascot ------------------------------- */
+/* -------------------------------- games -------------------------------- */
 
-export async function equipOutfit(outfit: string): Promise<UserStats> {
-  if (isDemo) return demo.equipOutfit(outfit);
-  // The RPC verifies the outfit is actually unlocked before applying it.
-  const { data, error } = await db().rpc("equip_outfit", { p_outfit: outfit });
-  if (error) throw new Error(error.message);
-  return data as UserStats;
+/** Points are capped and re-validated server-side; see docs/SECURITY.md §3. */
+export async function awardGamePoints(points: number, gameId: string): Promise<void> {
+  if (isDemo) { await demo.awardGamePoints(points, gameId); return; }
+  const { error } = await db().functions.invoke(FUNCTIONS.awardGamePoints, {
+    body: { points },
+  });
+  if (error) throw new Error(await readFunctionError(error));
+  rememberBest(gameId, points);
+}
+
+const BEST_KEY = "game-bests";
+export function gameBests(): Record<string, number> {
+  if (isDemo) return demo.gameBests();
+  try {
+    return JSON.parse(localStorage.getItem(BEST_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+function rememberBest(gameId: string, points: number) {
+  const all = gameBests();
+  all[gameId] = Math.max(all[gameId] ?? 0, points);
+  try { localStorage.setItem(BEST_KEY, JSON.stringify(all)); } catch { /* ignore */ }
 }
 
 /* ------------------------------- social ------------------------------- */
@@ -299,7 +321,7 @@ async function readFunctionError(error: unknown): Promise<string> {
   if (ctx && typeof ctx.json === "function") {
     try {
       const body = await ctx.json();
-      if (body?.error === "daily_limit_reached") return "You've hit today's practice limit.";
+      if (body?.error === "daily_limit_reached") return "You've hit today's limit — come back tomorrow.";
       if (body?.error) return String(body.error).replace(/_/g, " ");
     } catch { /* fall through */ }
   }

@@ -1,28 +1,32 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useSession } from "../lib/session";
+import { avatarEmoji } from "../lib/types";
 
 const TABS = [
-  { to: "/", icon: "🏠", label: "Home" },
-  { to: "/library", icon: "📚", label: "Library" },
-  { to: "/fred", icon: "🎙️", label: "FRED" },
+  { to: "/", icon: "🏠", label: "Today" },
+  { to: "/plan", icon: "📝", label: "Plan" },
+  { to: "/talk", icon: "💬", label: "Talk" },
+  { to: "/games", icon: "🎮", label: "Games" },
   { to: "/friends", icon: "👥", label: "Friends" },
-  { to: "/challenges", icon: "⚔️", label: "Compete" },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { stats } = useSession();
+  const { profile, stats } = useSession();
   const navigate = useNavigate();
 
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand">🦌 Linguafox</div>
-        <div className="stats">
-          <span className="pill">🔥 {stats?.streak_current ?? 0}</span>
-          <span className="pill">⭐ {stats?.star_points ?? 0}</span>
-          <button className="pill" style={{ border: "none", cursor: "pointer" }}
-                  onClick={() => navigate("/settings")} aria-label="Settings">⚙️</button>
+        <div className="brand">
+          <span>🦊</span>
+          <span className="lf">Lingua<b>fox</b></span>
+        </div>
+        <div className="topbar-right">
+          <span className="streak-pill">🔥 {stats?.streak_current ?? 0}</span>
+          <button className="avatar-btn" onClick={() => navigate("/den")} aria-label="Your den">
+            {avatarEmoji(profile?.avatar)}
+          </button>
         </div>
       </header>
 

@@ -21,3 +21,6 @@ supabase/.temp/
 *.log
 .DS_Store
 *.swp
+
+# TS incremental build cache
+*.tsbuildinfo

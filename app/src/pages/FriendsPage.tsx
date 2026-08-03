@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   listFriends, listRequests, respondToRequest, searchProfiles, sendFriendRequest,
 } from "../lib/api";
+import { avatarEmoji } from "../lib/types";
 import type { FriendRequest, PublicProfile } from "../lib/types";
 
 export default function FriendsPage() {
@@ -66,8 +67,10 @@ export default function FriendsPage() {
 
   return (
     <>
-      <h1>Friends</h1>
-      <p className="sub">Compare streaks, then challenge them to a speaking sprint.</p>
+      <div className="page-head">
+        <h1>Friends</h1>
+        <p className="sub">Compare streaks, then challenge them to a speaking sprint.</p>
+      </div>
 
       {error && <div className="error" role="alert" style={{ marginTop: 14 }}>{error}</div>}
 
@@ -84,11 +87,11 @@ export default function FriendsPage() {
           results.length === 0
             ? <p className="empty">No one found with that username.</p>
             : results.map((p) => (
-                <div className="list-item row" key={p.id}>
-                  <span className="avatar">{p.display_name.charAt(0).toUpperCase()}</span>
+                <div className="friend" key={p.id}>
+                  <span className="face">{avatarEmoji(p.avatar)}</span>
                   <div className="grow">
-                    <div className="word">{p.display_name}</div>
-                    <span className="trans">@{p.username} · 🔥 {p.streak_current}</span>
+                    <div style={{ fontWeight: 800 }}>{p.display_name}</div>
+                    <span className="sub">@{p.username} · 🔥 {p.streak_current}</span>
                   </div>
                   <button className="sm" onClick={() => void add(p.id, p.display_name)}>Add</button>
                 </div>
@@ -101,15 +104,15 @@ export default function FriendsPage() {
           <p className="section-title">Requests ({requests.length})</p>
           <div className="card">
             {requests.map((r) => (
-              <div className="list-item row" key={r.connection_id}>
-                <span className="avatar">{r.display_name.charAt(0).toUpperCase()}</span>
+              <div className="friend" key={r.connection_id}>
+                <span className="face">{avatarEmoji(r.avatar)}</span>
                 <div className="grow">
-                  <div className="word">{r.display_name}</div>
-                  <span className="trans">@{r.username} · ⭐ {r.star_points}</span>
+                  <div style={{ fontWeight: 800 }}>{r.display_name}</div>
+                  <span className="sub">@{r.username} · ⭐ {r.star_points}</span>
                 </div>
                 <div className="row" style={{ gap: 6 }}>
                   <button className="sm" onClick={() => void respond(r.connection_id, true)}>Accept</button>
-                  <button className="sm ghost" onClick={() => void respond(r.connection_id, false)}>Decline</button>
+                  <button className="sm outline" onClick={() => void respond(r.connection_id, false)}>Decline</button>
                 </div>
               </div>
             ))}
@@ -122,13 +125,13 @@ export default function FriendsPage() {
         {friends.length === 0 ? (
           <p className="empty">No friends yet — search for a username above.</p>
         ) : friends.map((f) => (
-          <div className="list-item row" key={f.id}>
-            <span className="avatar">{f.display_name.charAt(0).toUpperCase()}</span>
+          <div className="friend" key={f.id}>
+            <span className="face">{avatarEmoji(f.avatar)}</span>
             <div className="grow">
-              <div className="word">{f.display_name}</div>
-              <span className="trans">🔥 {f.streak_current} · ⭐ {f.star_points}</span>
+              <div style={{ fontWeight: 800 }}>{f.display_name}</div>
+              <span className="sub">🔥 {f.streak_current} · ⭐ {f.star_points}</span>
             </div>
-            <button className="sm subtle" onClick={() => navigate("/challenges")}>Challenge</button>
+            <button className="sm ghost" onClick={() => navigate("/challenges")}>Challenge</button>
           </div>
         ))}
       </div>

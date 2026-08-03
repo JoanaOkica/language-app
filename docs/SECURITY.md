@@ -62,11 +62,13 @@ ranking crosses into the trusted side.
 | 16 | **`search_path` hijacking of SECURITY DEFINER functions** — a classic Postgres privilege-escalation route | Every such function sets `search_path = ''` and fully qualifies each object. | all migrations |
 | 17 | **SQL injection** | No string-built SQL anywhere; PostgREST and the Supabase client parameterise everything, and function arguments are typed. | — |
 | 18 | **XSS** | React escapes by default. There is no `dangerouslySetInnerHTML` and no `eval` in the codebase — including for AI-generated text, which is rendered as text. | `app/src` |
-| 19 | **Wearing an unearned reward** | `equip_outfit()` verifies the outfit is in `unlocked_outfits` server-side before applying it. | `0003_functions.sql` |
+| 19 | **Inflating XP through the games** | `award-game-points` caps a single award at 50 and the day at 20 calls, and routes through `award_points()` so streaks still follow the real calendar. | `award-game-points` |
 | 20 | **Storage abused as free file hosting / malware drop** | Buckets declare `file_size_limit` and an `allowed_mime_types` allow-list (audio and images only). | `0004_storage.sql` |
 | 21 | **Stale audio accumulating** (privacy + cost) | `fred-turn` deletes the recording as soon as it is transcribed. Only the transcript is retained. | `fred-turn` |
 | 22 | **Error messages leaking schema/infrastructure** | Edge Functions log details server-side and return only a short error code. | `_shared/http.ts` |
-| 23 | **Orphaned data after account deletion** | `on delete cascade` from `auth.users` covers every table; `delete-account` clears storage objects first, which FKs do not reach. | `delete-account` |
+| 23 | **Orphaned data after account deletion** | `on delete cascade` from `auth.users` covers every table; `delete-account` clears storage objects first, which FKs do not reach. The UI requires typing `DELETE` to confirm. | `delete-account`, `DenPage` |
+| 24 | **Arbitrary avatar values** (script or external URL injected as an avatar) | Avatars are an id from a fixed set, enforced by a CHECK constraint and rendered as an emoji — never a user-supplied URL. | `0005` |
+| 25 | **Vocabulary bloat / duplicate-write abuse** | Unique indexes on `(user_id, lower(word))` and `(vocabulary_id, lower(context))` make repeats no-ops, so a loop of identical requests cannot inflate the table. | `0005`, `0006` |
 
 ---
 
@@ -78,8 +80,8 @@ design therefore **bounds the damage** rather than pretending to prevent it:
 
 - ≤ 50 points per call (`MAX_POINTS_PER_GAME`),
 - ≤ 20 calls per day (`DAILY_GAME_LIMIT`),
-- written through `award_points()`, so streaks and outfit unlocks still follow
-  the real calendar.
+- written through `award_points()`, so streaks and leagues still follow the
+  real calendar.
 
 The worst case is a user inflating their own points within a capped daily
 ceiling. FRED scores, which carry the competitive weight, are computed

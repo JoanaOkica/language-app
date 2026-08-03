@@ -54,8 +54,10 @@ export default function ChallengesPage() {
 
   return (
     <>
-      <h1>⚔️ Compete</h1>
-      <p className="sub">Race a friend through FRED speaking sessions.</p>
+      <div className="page-head">
+        <h1>🏆 Challenges</h1>
+        <p className="sub">Race a friend through FRED speaking sessions.</p>
+      </div>
 
       {error && <div className="error" role="alert" style={{ marginTop: 14 }}>{error}</div>}
 
@@ -91,7 +93,7 @@ export default function ChallengesPage() {
             <div className="card" key={c.id}>
               <div className="row between">
                 <h2>vs {c.opponent_name}</h2>
-                <span className="tag" style={{ marginTop: 0 }}>{c.status}</span>
+                <span className="pill-count">{c.status}</span>
               </div>
               <p className="sub">First to {c.target_sessions} FRED sessions</p>
 
@@ -110,13 +112,13 @@ export default function ChallengesPage() {
               {c.status === "pending" && c.i_am_opponent ? (
                 <div className="btn-row">
                   <button className="grow" onClick={() => void respond(c.id, true)}>Accept</button>
-                  <button className="grow ghost" onClick={() => void respond(c.id, false)}>Decline</button>
+                  <button className="grow outline" onClick={() => void respond(c.id, false)}>Decline</button>
                 </div>
               ) : c.status === "pending" ? (
                 <p className="sub" style={{ textAlign: "center" }}>Waiting for {c.opponent_name} to accept…</p>
               ) : (
                 <div className="btn-row">
-                  <button className="full" onClick={() => navigate(`/fred?challenge=${c.id}`)}>
+                  <button className="full" onClick={() => navigate(`/talk?challenge=${c.id}`)}>
                     🎙️ Do a session
                   </button>
                 </div>
@@ -131,12 +133,12 @@ export default function ChallengesPage() {
           <p className="section-title">Finished</p>
           <div className="card">
             {done.map((c) => (
-              <div className="list-item row between" key={c.id}>
+              <div className="friend" key={c.id}>
                 <div className="grow">
-                  <div className="word">vs {c.opponent_name}</div>
-                  <span className="trans">{c.my_score} – {c.their_score}</span>
+                  <div style={{ fontWeight: 800 }}>vs {c.opponent_name}</div>
+                  <span className="sub">{c.my_score} – {c.their_score}</span>
                 </div>
-                <span className="pill">
+                <span className="pill-count">
                   {c.winner_id && !c.i_am_opponent && c.my_score >= c.their_score ? "🏆 Won" : "Finished"}
                 </span>
               </div>

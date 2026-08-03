@@ -1,9 +1,10 @@
 /**
- * generate-vocabulary — task-based word/sentence generation (feature A).
+ * generate-vocabulary — task-based word generation (feature A).
  *
- * The task row must already exist and belong to the caller; ownership is proven
- * by reading it through the *user-scoped* client, so RLS does the authorisation
- * rather than a hand-written check that could drift.
+ * Repeated routines are handled here: the model is told which words the learner
+ * already has, and `upsert_vocabulary` guarantees one card per word. A word the
+ * learner already knows gains a *new example sentence* for the new context
+ * instead of becoming a duplicate card; a genuinely repeated context is a no-op.
  */
 import { preflight, json, fail } from "../_shared/http.ts";
 import { requireUser, AuthError } from "../_shared/auth.ts";
@@ -35,7 +36,7 @@ Deno.serve(async (req) => {
   const taskId = typeof body.taskId === "string" && UUID_RE.test(body.taskId) ? body.taskId : null;
   if (!taskId) return fail(req, 400, "invalid_task_id");
 
-  // RLS guarantees this returns a row only if the task belongs to the caller.
+  // RLS guarantees a row comes back only if the task belongs to the caller.
   const { data: task, error: taskError } = await asUser
     .from("tasks")
     .select("id, title, status")
@@ -60,15 +61,21 @@ Deno.serve(async (req) => {
     .select("level, target_language, native_language")
     .eq("id", userId)
     .single();
+  const level = profile?.level ?? "beginner";
+
+  // Words already on the learner's shelf. Sent to the model so it can write a
+  // sentence that fits *this* context rather than repeating an old one.
+  const { data: known } = await asService.rpc("known_words", { p_user: userId });
 
   await asUser.from("tasks").update({ status: "generating" }).eq("id", taskId);
 
   try {
     const { items, tokens } = await generateVocabulary({
       title: task.title,
-      level: profile?.level ?? "A1",
+      level,
       targetLanguage: profile?.target_language ?? "Spanish",
       nativeLanguage: profile?.native_language ?? "English",
+      knownWords: Array.isArray(known) ? known : [],
     });
 
     if (items.length === 0) {
@@ -76,30 +83,28 @@ Deno.serve(async (req) => {
       return fail(req, 422, "no_vocabulary_generated");
     }
 
-    // Written through the user client: RLS re-verifies every row's user_id.
-    const { error: insertError } = await asUser.from("vocabulary").insert(
-      items.map((it) => ({
-        user_id: userId,
-        task_id: taskId,
-        word: it.word,
-        translation: it.translation,
-        part_of_speech: it.part_of_speech,
-        example_sentence: it.example_sentence,
-        sentence_translation: it.sentence_translation,
-        task_context: task.title,
-        level: profile?.level ?? "A1",
-      })),
-    );
-    if (insertError) {
+    // One transaction decides new card / new context / already known.
+    const { data: result, error: upsertError } = await asService.rpc("upsert_vocabulary", {
+      p_user: userId,
+      p_task: taskId,
+      p_context: task.title,
+      p_level: level,
+      p_items: items,
+    });
+    if (upsertError) {
       await asUser.from("tasks").update({ status: "error" }).eq("id", taskId);
-      return fail(req, 500, "save_failed", insertError);
+      return fail(req, 500, "save_failed", upsertError);
     }
 
     await asUser.from("tasks").update({ status: "generated" }).eq("id", taskId);
-    // Increment, never overwrite: the day's running total also covers FRED.
     await asService.rpc("add_token_usage", { p_user: userId, p_tokens: tokens });
 
-    return json(req, { count: items.length, items });
+    const counts = Array.isArray(result) ? result[0] : result;
+    return json(req, {
+      newWords: counts?.new_words ?? 0,
+      newContexts: counts?.new_contexts ?? 0,
+      alreadyKnown: counts?.already_known ?? 0,
+    });
   } catch (err) {
     await asUser.from("tasks").update({ status: "error" }).eq("id", taskId);
     return fail(req, 502, "generation_failed", err);
