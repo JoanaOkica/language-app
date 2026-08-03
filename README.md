@@ -26,7 +26,7 @@ React · TypeScript · Supabase (Postgres + Auth + Storage + Edge Functions) · 
 | 📚 | **One card per word** — a word you already know gains a *new sentence* for the new situation instead of a duplicate |
 | 🎙️ | **FRED** — record your answer, get a transcript, coaching feedback and a score |
 | 🎮 | **Four mini-games** — Word Match, Quick Quiz, Echo Cat, Sentence Builder, all built from *your* words |
-| 🔥 | **Streaks & XP leagues** — Kitten → Whiskers → Prowler → Panther → Legend |
+| 🔥 | **Streaks & XP leagues** — Bronze → Silver → Gold → Sapphire → Diamond |
 | 👥 | **Friends** — search by username, compare streaks, climb the leaderboard |
 | 🏆 | **Challenges** — race a friend through FRED speaking sprints |
 

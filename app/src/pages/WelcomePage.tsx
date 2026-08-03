@@ -62,10 +62,6 @@ export default function WelcomePage() {
           </li>
         ))}
       </ul>
-
-      <p className="welcome-foot">
-        Add Cat's Tongue to your home screen for the full app feel 🐱
-      </p>
     </div>
   );
 }

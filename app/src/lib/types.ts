@@ -79,11 +79,11 @@ export const speechTag = (language: string | null | undefined) =>
 
 /** XP leagues — presentational, derived from star_points. */
 export const LEAGUES = [
-  { id: "kitten", name: "Kitten", icon: "🐾", at: 0 },
-  { id: "whiskers", name: "Whiskers", icon: "🐈", at: 250 },
-  { id: "prowler", name: "Prowler", icon: "😼", at: 750 },
-  { id: "panther", name: "Panther", icon: "🐆", at: 1500 },
-  { id: "legend", name: "Legend", icon: "👑", at: 3000 },
+  { id: "bronze", name: "Bronze", icon: "🥉", at: 0 },
+  { id: "silver", name: "Silver", icon: "🥈", at: 250 },
+  { id: "gold", name: "Gold", icon: "🥇", at: 750 },
+  { id: "sapphire", name: "Sapphire", icon: "💎", at: 1500 },
+  { id: "diamond", name: "Diamond", icon: "👑", at: 3000 },
 ] as const;
 
 export type League = (typeof LEAGUES)[number];
