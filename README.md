@@ -8,9 +8,9 @@ Tell the app what you're doing today; it packs the exact vocabulary for it.
 Then practise speaking with **FRED**, an AI coach who scores your pronunciation,
 grammar and fluency.
 
-<img src="docs/screens/00-welcome.png" width="250" alt="Welcome screen">
-<img src="docs/screens/03-today.png" width="250" alt="Today dashboard">
-<img src="docs/screens/07-fred.png" width="250" alt="FRED speaking coach">
+<img src="docs/screens/01-welcome.png" width="250" alt="Welcome screen">
+<img src="docs/screens/12-today.png" width="250" alt="Today dashboard">
+<img src="docs/screens/19-fred-scored.png" width="250" alt="FRED speaking coach">
 
 React · TypeScript · Supabase (Postgres + Auth + Storage + Edge Functions) · Capacitor
 
@@ -40,25 +40,25 @@ both "I speak" and "I'm learning". The only rule is that the two differ.
 
 <table>
 <tr>
-<td align="center" width="33%"><img src="docs/screens/00-welcome.png" width="220"><br><sub><b>Welcome</b><br>What the app does, then the two ways in</sub></td>
-<td align="center" width="33%"><img src="docs/screens/01-signin.png" width="220"><br><sub><b>Sign in</b><br>Generic errors — no account enumeration</sub></td>
-<td align="center" width="33%"><img src="docs/screens/02-onboarding.png" width="220"><br><sub><b>Set up your den</b><br>Avatar, languages, level</sub></td>
+<td align="center" width="33%"><img src="docs/screens/01-welcome.png" width="220"><br><sub><b>Welcome</b><br>What the app does, then the two ways in</sub></td>
+<td align="center" width="33%"><img src="docs/screens/07-signin.png" width="220"><br><sub><b>Sign in</b><br>Generic errors — no account enumeration</sub></td>
+<td align="center" width="33%"><img src="docs/screens/11-onboarding.png" width="220"><br><sub><b>Set up your den</b><br>Avatar, languages, level</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/screens/03-today.png" width="220"><br><sub><b>Today</b><br>Daily goal, streak, quick actions</sub></td>
-<td align="center"><img src="docs/screens/04-plan.png" width="220"><br><sub><b>Plan</b><br>Describe your day, get words</sub></td>
-<td align="center"><img src="docs/screens/05-plan-repeat.png" width="220"><br><sub><b>Repeat a routine</b><br>Adds nothing, and says so</sub></td>
+<td align="center"><img src="docs/screens/12-today.png" width="220"><br><sub><b>Today</b><br>Daily goal, streak, quick actions</sub></td>
+<td align="center"><img src="docs/screens/14-plan-generated.png" width="220"><br><sub><b>Plan</b><br>Describe your day, get words</sub></td>
+<td align="center"><img src="docs/screens/15-plan-repeat-detected.png" width="220"><br><sub><b>Repeat a routine</b><br>Adds nothing, and says so</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/screens/06-words.png" width="220"><br><sub><b>Your words</b><br>One card, many contexts</sub></td>
-<td align="center"><img src="docs/screens/07-fred.png" width="220"><br><sub><b>FRED</b><br>Score + coaching feedback</sub></td>
-<td align="center"><img src="docs/screens/08-games.png" width="220"><br><sub><b>Games</b><br>Built from your vocabulary</sub></td>
-<td align="center"><img src="docs/screens/09-game-builder.png" width="220"><br><sub><b>Sentence Builder</b><br>Tap words into order</sub></td>
+<td align="center"><img src="docs/screens/16-words.png" width="220"><br><sub><b>Your words</b><br>One card, many contexts</sub></td>
+<td align="center"><img src="docs/screens/19-fred-scored.png" width="220"><br><sub><b>FRED</b><br>Score + coaching feedback</sub></td>
+<td align="center"><img src="docs/screens/20-games-hub.png" width="220"><br><sub><b>Games</b><br>Built from your vocabulary</sub></td>
+<td align="center"><img src="docs/screens/24-game-sentence-builder.png" width="220"><br><sub><b>Sentence Builder</b><br>Tap words into order</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/screens/10-friends.png" width="220"><br><sub><b>Friends</b><br>Search, requests, streaks</sub></td>
-<td align="center"><img src="docs/screens/11-challenges.png" width="220"><br><sub><b>Challenges</b><br>FRED sprints, scored server-side</sub></td>
-<td align="center"><img src="docs/screens/12-den.png" width="220"><br><sub><b>Your den</b><br>Profile, privacy, deletion</sub></td>
+<td align="center"><img src="docs/screens/26-friends.png" width="220"><br><sub><b>Friends</b><br>Search, requests, streaks</sub></td>
+<td align="center"><img src="docs/screens/29-challenges-active.png" width="220"><br><sub><b>Challenges</b><br>FRED sprints, scored server-side</sub></td>
+<td align="center"><img src="docs/screens/30-den.png" width="220"><br><sub><b>Your den</b><br>Profile, privacy, deletion</sub></td>
 </tr>
 </table>
 
@@ -67,10 +67,10 @@ both "I speak" and "I'm learning". The only rule is that the two differ.
 <br>
 <table>
 <tr>
-<td align="center" width="25%"><img src="docs/screens/a1-signup-weak.png" width="190"><br><sub>Weak password blocked</sub></td>
-<td align="center" width="25%"><img src="docs/screens/a3-signup-strong.png" width="190"><br><sub>Strong password accepted</sub></td>
-<td align="center" width="25%"><img src="docs/screens/a4-confirm-gate.png" width="190"><br><sub>Email confirmation gate</sub></td>
-<td align="center" width="25%"><img src="docs/screens/a8-reset-password.png" width="190"><br><sub>Password reset</sub></td>
+<td align="center" width="25%"><img src="docs/screens/03-signup-weak-password.png" width="190"><br><sub>Weak password blocked</sub></td>
+<td align="center" width="25%"><img src="docs/screens/05-signup-ready.png" width="190"><br><sub>Strong password accepted</sub></td>
+<td align="center" width="25%"><img src="docs/screens/06-confirm-email-gate.png" width="190"><br><sub>Email confirmation gate</sub></td>
+<td align="center" width="25%"><img src="docs/screens/10-reset-password.png" width="190"><br><sub>Password reset</sub></td>
 </tr>
 </table>
 </details>
@@ -80,8 +80,8 @@ both "I speak" and "I'm learning". The only rule is that the two differ.
 <br>
 <table>
 <tr>
-<td align="center" width="50%"><img src="docs/screens/13-language-pairing.png" width="220"><br><sub>Portuguese speaker learning French</sub></td>
-<td align="center" width="50%"><img src="docs/screens/14-same-language-blocked.png" width="220"><br><sub>Can't "learn" what you already speak</sub></td>
+<td align="center" width="50%"><img src="docs/screens/31-den-language-pairing.png" width="220"><br><sub>Portuguese speaker learning French</sub></td>
+<td align="center" width="50%"><img src="docs/screens/32-den-same-language-blocked.png" width="220"><br><sub>Can't "learn" what you already speak</sub></td>
 </tr>
 </table>
 </details>
@@ -113,6 +113,7 @@ app/                  React + TypeScript + Vite
   src/components/     CatLogo.tsx — the brand mark, drawn in SVG
   public/favicon.svg  same mark, also the source for the app icons
   scripts/e2e.cjs     30-check end-to-end pass
+  scripts/screens.cjs      captures every screen into docs/screens/
   scripts/make-icons.cjs   renders favicon.svg into the Android launcher icons
   android/            Capacitor project (CI turns this into an APK)
 
@@ -136,7 +137,7 @@ functions the client has no permission to execute.
 | [SECURITY.md](docs/SECURITY.md) | Threat model and mitigations |
 | [PENTEST.md](docs/PENTEST.md) | Adversarial review — 4 findings, fixed |
 | [AUTH.md](docs/AUTH.md) | Sign-up, confirmation, 24-hour purge, reset, deletion |
-| [SCREENS.md](docs/SCREENS.md) | Every screen, captured from the running app |
+| [SCREENS.md](docs/SCREENS.md) | All 33 screens, captured from the running app |
 
 ---
 

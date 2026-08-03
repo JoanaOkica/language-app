@@ -1,66 +1,79 @@
-# App Screens
+# Every Screen
 
-<img src="screens/logo.png" width="260" alt="Cat's Tongue logo">
+<div align="center">
+<img src="screens/logo.png" width="260" alt="Cat's Tongue">
+</div>
 
-Captured from the running React app (`app/`) in demo mode at 460 px width.
-Warm cream + orange theme, five-tab navigation, customisable avatars.
+All 33 screens and states of the app, captured from the running client at
+460 px width. Regenerate any time with:
 
-### Account lifecycle
+```bash
+cd app && npm run dev
+node scripts/screens.cjs        # writes docs/screens/ + the contact sheet
+```
+
+## Contact sheet
+
+[![All screens](screens/all-screens.png)](screens/all-screens.png)
+
+---
+
+## 1 · Getting in
+
+| | | |
+|---|---|---|
+| **01 Welcome**<br>The signed-out landing page: what the app does, then the two ways in.<br><img src="screens/01-welcome.png" width="230"> | **02 Sign up**<br>Email, password, and the password again.<br><img src="screens/02-signup-empty.png" width="230"> | **03 Weak password**<br>Common passwords are refused, with one thing to fix at a time.<br><img src="screens/03-signup-weak-password.png" width="230"> |
+| **04 Mismatch**<br>The two entries must match before the button unlocks.<br><img src="screens/04-signup-mismatch.png" width="230"> | **05 Ready**<br>Meter turns green and sign-up is enabled.<br><img src="screens/05-signup-ready.png" width="230"> | **06 Confirm your email**<br>No session until it's verified; unconfirmed accounts expire in 24 h.<br><img src="screens/06-confirm-email-gate.png" width="230"> |
+| **07 Sign in**<br>One generic failure message, so accounts cannot be enumerated.<br><img src="screens/07-signin.png" width="230"> | **08 Forgot password**<br>Enter the address to receive a link.<br><img src="screens/08-forgot-password.png" width="230"> | **09 Link sent**<br>"If an account exists…" — never confirms whether it does.<br><img src="screens/09-forgot-password-sent.png" width="230"> |
+| **10 Reset password**<br>Same policy as sign-up; signs you out everywhere afterwards.<br><img src="screens/10-reset-password.png" width="230"> | **11 Set up your den**<br>Avatar, both languages, and level.<br><img src="screens/11-onboarding.png" width="230"> | |
+
+## 2 · Daily use
+
+| | | |
+|---|---|---|
+| **12 Today**<br>Daily XP goal, streak week, four actions, today's words, league.<br><img src="screens/12-today.png" width="230"> | **13 Plan (empty)**<br>Describe the day ahead in plain language.<br><img src="screens/13-plan-empty.png" width="230"> | **14 Plan (generated)**<br>Words packed for that activity, at your level.<br><img src="screens/14-plan-generated.png" width="230"> |
+| **15 Repeat detected**<br>The same routine twice adds nothing — and says so.<br><img src="screens/15-plan-repeat-detected.png" width="230"> | **16 Your words**<br>One card per word, carrying every context it appeared in.<br><img src="screens/16-words.png" width="230"> | **17 Search & filter**<br>A–Z or newest first, filtered by date added.<br><img src="screens/17-words-search.png" width="230"> |
+
+## 3 · FRED
 
 | | |
 |---|---|
-| **Sign-up validation**<br>Weak password blocked, with one fix at a time.<br><img src="screens/a1-signup-weak.png" width="330"> | **Confirm password**<br>Mismatch blocks submission.<br><img src="screens/a2-signup-mismatch.png" width="330"> |
-| **Strong password accepted**<br>Meter turns green and submit unlocks.<br><img src="screens/a3-signup-strong.png" width="330"> | **Confirmation gate**<br>No session until the email is verified; 24-hour expiry stated.<br><img src="screens/a4-confirm-gate.png" width="330"> |
-| **Forgot password**<br>Neutral wording — never reveals whether an account exists.<br><img src="screens/a7-forgot-password.png" width="330"> | **Reset password**<br>Same policy as sign-up, typed twice.<br><img src="screens/a8-reset-password.png" width="330"> |
+| **18 Ready to speak**<br>FRED asks; you answer out loud.<br><img src="screens/18-fred-ready.png" width="230"> | **19 Scored**<br>Transcript, score, and a breakdown of pronunciation, grammar and fluency.<br><img src="screens/19-fred-scored.png" width="230"> |
 
-### The app
+## 4 · Games
 
-| | |
-|---|---|
-| **0. Welcome**<br>The signed-out landing page: what the app does, then the two ways in.<br><img src="screens/00-welcome.png" width="330"> | **1. Sign in**<br>Generic failure message so accounts cannot be enumerated.<br><img src="screens/01-signin.png" width="330"> |
-| **2. Set up your den**<br>Avatar picker, language chips, plain-English levels.<br><img src="screens/02-onboarding.png" width="330"> | **3. Today**<br>Daily XP goal, week strip, four action tiles, today's words, league.<br><img src="screens/03-today.png" width="330"> | **4. Plan**<br>Describe your day → FRED packs the words you'll need.<br><img src="screens/04-plan.png" width="330"> |
-| **5. Repeated routine**<br>Same day described twice adds nothing — and says so.<br><img src="screens/05-plan-repeat.png" width="330"> | **6. Your words**<br>One card per word; "café" carries 3 contexts, not 3 duplicates.<br><img src="screens/06-words.png" width="330"> |
-| **7. Talk — FRED**<br>Speaking coach: record, transcribe, score.<br><img src="screens/07-fred.png" width="330"> | **8. Games**<br>Four mini-games built from the learner's own vocabulary.<br><img src="screens/08-games.png" width="330"> |
-| **9. Sentence Builder**<br>Tap the words into the right order.<br><img src="screens/09-game-builder.png" width="330"> | **10. Friends**<br>Search by username, accept requests, compare streaks.<br><img src="screens/10-friends.png" width="330"> |
-| **11. Challenges**<br>FRED sprints against a friend, scored server-side.<br><img src="screens/11-challenges.png" width="330"> | **12. Your den**<br>Avatar, languages, level, privacy — and account deletion.<br><img src="screens/12-den.png" width="330"> |
-| **13. Any language pairing**<br>Portuguese speaker learning French — all 22 languages pair freely.<br><img src="screens/13-language-pairing.png" width="330"> | **14. Same-language guard**<br>You can't "learn" the language you already speak.<br><img src="screens/14-same-language-blocked.png" width="330"> |
+| | | |
+|---|---|---|
+| **20 Games hub**<br>Four games, all built from your own vocabulary.<br><img src="screens/20-games-hub.png" width="230"> | **21 Word Match**<br>Pair each word with its meaning.<br><img src="screens/21-game-word-match.png" width="230"> | **22 Quick Quiz**<br>Pick the right translation, fast.<br><img src="screens/22-game-quick-quiz.png" width="230"> |
+| **23 Echo Cat**<br>Hear the word in the language you're learning, then choose it.<br><img src="screens/23-game-echo-cat.png" width="230"> | **24 Sentence Builder**<br>Tap the words into the right order.<br><img src="screens/24-game-sentence-builder.png" width="230"> | **25 Result**<br>Score and XP earned — capped and awarded server-side.<br><img src="screens/25-game-result.png" width="230"> |
+
+## 5 · Social
+
+| | | |
+|---|---|---|
+| **26 Friends**<br>Requests to answer and friends to compare streaks with.<br><img src="screens/26-friends.png" width="230"> | **27 Search**<br>Find people by username; hidden profiles never appear.<br><img src="screens/27-friends-search.png" width="230"> | **28 New challenge**<br>Pick a friend and a target for a FRED sprint.<br><img src="screens/28-challenges-new.png" width="230"> |
+| **29 Challenge running**<br>Scores are written by the server from real sessions.<br><img src="screens/29-challenges-active.png" width="230"> | | |
+
+## 6 · Your den
+
+| | | |
+|---|---|---|
+| **30 Den**<br>Avatar, languages, level, privacy and account actions.<br><img src="screens/30-den.png" width="230"> | **31 Any language pairing**<br>Portuguese speaker learning French — all 22 pair freely.<br><img src="screens/31-den-language-pairing.png" width="230"> | **32 Same-language guard**<br>You can't "learn" the language you already speak.<br><img src="screens/32-den-same-language-blocked.png" width="230"> |
+| **33 Delete account**<br>Type `DELETE` **and** re-enter your password — a stolen session isn't enough.<br><img src="screens/33-den-delete-account.png" width="230"> | | |
+
+---
 
 ## Navigation
 
-Five tabs, matching the reference design:
-
-| Tab | Route | Purpose |
+| Tab | Route | Screens |
 |-----|-------|---------|
-| Today | `/` | Dashboard: goal, streak, tiles, today's words |
-| Plan | `/plan` | Describe your day, get vocabulary |
-| Talk | `/talk` | FRED, the speaking coach |
-| Games | `/games` | Word Match · Quick Quiz · Echo Fox · Sentence Builder |
-| Friends | `/friends` | Social graph and leaderboard |
+| Today | `/` | 12 |
+| Plan | `/plan` | 13–15 |
+| Talk | `/talk` | 18–19 |
+| Games | `/games`, `/games/:id` | 20–25 |
+| Friends | `/friends` | 26–27 |
 
-`/words`, `/challenges` and `/den` are reached from the Today tiles, the
-"See all" link, and the avatar button in the header.
-
-## Flow
-
-```mermaid
-flowchart LR
-    A[Sign in] --> B[Set up den]
-    B --> C[Today]
-    C --> D[Plan]
-    D -->|words| E[Your words]
-    C --> F[Talk / FRED]
-    C --> G[Games]
-    C --> H[Challenges]
-    C --> I[Friends]
-    H -->|sprint| F
-    G -->|XP| C
-```
-
-## Reproducing these
-
-```bash
-cd app && npm install && npm run dev
-```
-
-With no `.env` the app runs in demo mode against an in-memory store, so every
-screen is reachable without a Supabase project.
+`/words` (16–17), `/challenges` (28–29) and `/den` (30–33) are reached from the
+Today tiles, the "See all" link, and the avatar button in the header. Signed
+out, `/` is the welcome page, with `/signup`, `/signin` and `/reset-password`
+alongside it.
